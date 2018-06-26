@@ -115,6 +115,25 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Attach.h" />
+    <ClInclude Include="Fitting_Functions.h" />
+    <ClInclude Include="Linear_Algebra.h" />
+    <ClInclude Include="Probability_Functions.h" />
+    <ClInclude Include="Random_Number_Generators.h" />
+    <ClInclude Include="Statistical_Functions.h" />
+    <ClInclude Include="Templates.h" />
+    <ClInclude Include="Test_Routines.h" />
+    <ClInclude Include="Useful.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="FittingFunctions.cpp" />
+    <ClCompile Include="Linear_Algebra.cpp" />
+    <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Probability_Functions.cpp" />
+    <ClCompile Include="Random_Number_Generators.cpp" />
+    <ClCompile Include="Statistical_Functions.cpp" />
+    <ClCompile Include="Test_Routines.cpp" />
+    <ClCompile Include="Useful.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
