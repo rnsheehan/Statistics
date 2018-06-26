@@ -27,7 +27,7 @@ void sand_box();
 
 int main()
 {
-	sand_box(); 
+	//sand_box(); 
 
 	//testing::compute_moments(); 
 
@@ -70,7 +70,7 @@ int main()
 
 	//testing::con_tab_test(); 
 
-	//testing::pearson_test(); 
+	testing::pearson_test(); 
 
 	//testing::spearman_test(); 
 
