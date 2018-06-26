@@ -27,6 +27,8 @@ void sand_box();
 
 int main()
 {
+	sand_box(); 
+
 	//testing::compute_moments(); 
 
 	//testing::t_test_diff_mean_same_var(); 
@@ -70,7 +72,7 @@ int main()
 
 	//testing::pearson_test(); 
 
-	testing::spearman_test(); 
+	//testing::spearman_test(); 
 
 	//testing::rank_order_test(); 
 
@@ -223,7 +225,7 @@ void sand_box()
 
 	std::pair<int, int> test = lin_alg::array_2D_size(X); 
 
-	X.clear(); 
+	X.clear();
 }
 
 //void sort2(std::vector<double> &arr1, std::vector<double> &arr2)
