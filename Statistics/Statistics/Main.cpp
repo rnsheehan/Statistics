@@ -70,7 +70,7 @@ int main()
 
 	//testing::pearson_test(); 
 
-	//testing::spearman_test(); 
+	testing::spearman_test(); 
 
 	//testing::rank_order_test(); 
 
@@ -82,7 +82,7 @@ int main()
 
 	//testing::gaussj_test(); 
 
-	testing::lst_sqr_test(); 
+	//testing::lst_sqr_test(); 
 	
 	std::cout<<"Press enter to close console\n";
 	std::cin.get(); 
