@@ -1119,3 +1119,30 @@ void testing::lst_sqr_test()
 	}
 	std::cout << "\n";
 }
+
+void testing::fgauss(double x, std::vector<double> &a, double *y, std::vector<double> &dyda, int na)
+{
+	// y(x;a) is the sum of na/3 Gaussians. The amplitude, centre and width of the Gaussians are stored in a
+	// a[i] = amp_{k}, a[i+1] = centre_{k}, a[i+2] = width_{k}
+	// Dimensions of the arrays are a[0..na-1], dyda[0..na-1]
+	// k = 1..na/3
+
+	try {
+		int i;
+		double fac, ex, arg;
+
+		*y = 0.0;
+		for (i = 0; i < na - 1; i += 3) {
+			arg = (x - a[i + 1]) / a[i + 2];
+			ex = exp(-arg * arg);
+			fac = a[i] * ex*2.0*arg;
+			*y += a[i] * ex;
+			dyda[i] = ex;
+			dyda[i + 1] = fac / a[i + 2];
+			dyda[i + 2] = fac * arg / a[i + 2];
+		}
+	}
+	catch (std::invalid_argument &e) {
+		std::cerr << e.what();
+	}
+}

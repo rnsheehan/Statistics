@@ -233,3 +233,78 @@ void fit::lfit(std::vector<double> &x, std::vector<double> &y, std::vector<doubl
 		std::cerr << e.what();
 	}
 }
+
+void fit::mrqcof(std::vector<double> &x, std::vector<double> &y, std::vector<double> &sig, int &ndata, std::vector<double> &a, std::vector<int> &ia, int &ma, std::vector<std::vector<double>> &alpha, std::vector<double> &beta, double *chisq, void(*funcs)(double, std::vector<double> &, double *, std::vector<double> &, int&))
+{
+	// Used by mrqmin to evaluate the linearised alpha and beta arrays and to compute chi^{2}
+
+	try {
+	
+		bool c1 = ndata > 3 ? true : false; 
+		bool c2 = (int)(x.size()) == ndata ? true : false; 
+		bool c3 = (int)(y.size()) == ndata ? true : false;
+		bool c4 = (int)(sig.size()) == ndata ? true : false;
+		bool c5 = ma > 0 ? true : false;
+		bool c6 = (int)(a.size()) == ma ? true : false;
+		bool c7 = (int)(ia.size()) == ma ? true : false;
+		bool c8 = (int)(beta.size()) == ma ? true : false;
+		std::pair<int, int> sze = lin_alg::array_2D_size(alpha); 
+		bool c9 = sze.first == ma ? true : false;
+		bool c10 = sze.second == ma ? true : false;
+		bool c11 = c1 && c2 && c3 && c4 && c5 && c6 && c7 && c8 && c9 && c10 ? true : false; 
+
+		if (c11) {
+
+			int i, j, k, l, m, mfit = 0;
+			double ymod, wt, sig2i, dy;
+
+			std::vector<double> dyda(ma, 0.0);
+
+			for (j = 0; j < ma; j++)
+				if (ia[j]) mfit++;
+
+			// initialise symmetric alpha, beta	
+			for (j = 0; j < mfit; j++) {
+				for (k = 0; k <= j; k++) alpha[j][k] = 0.0;
+				beta[j] = 0.0;
+			}
+
+			*chisq = 0.0;
+
+			// sum loop over all data
+			for (i = 0; i < ndata; i++) {
+				(*funcs)(x[i], a, &ymod, dyda, ma);
+				sig2i = 1.0 / (sig[i] * sig[i]);
+				dy = y[i] - ymod;
+				for (j = 0, l = 0; l < ma; l++) {
+					if (ia[l]) {
+						wt = dyda[l] * sig2i;
+						for (j++, k = 0, m = 0; m <= l; m++)
+							if (ia[m]) alpha[j][++k] += wt * dyda[m];
+						beta[j] += dy * wt;
+					}
+				}
+				*chisq += dy * dy*sig2i; // find chi^{2}
+			}
+
+			// fill the symmetric side
+			for (j = 1; j < mfit; j++)
+				for (k = 0; k<j; k++) alpha[k][j] = alpha[j][k];
+
+			dyda.clear();		
+		}
+		else {
+			std::string reason = "Error: fit::mrqcof()\n";
+			
+			throw std::invalid_argument(reason); 
+		}
+	}
+	catch (std::invalid_argument &e) {
+		std::cerr << e.what();
+	} 
+}
+
+void fit::mrqmin(std::vector<double> &x, std::vector<double> &y, std::vector<double> &sig, int &ndata, std::vector<double> &a, std::vector<int> &ia, int &ma, std::vector<std::vector<double>> &covar, std::vector<std::vector<double>> &alpha, double *chisq, void(*funcs)(double, std::vector<double> &, double *, std::vector<double> &, int &), double *alamda)
+{
+	
+}

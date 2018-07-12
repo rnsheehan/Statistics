@@ -52,6 +52,8 @@ namespace testing{
 	void fleg(double &x, std::vector<double> &afunc, int &ma);
 
 	void lst_sqr_test(); 
+
+	void fgauss(double x, std::vector<double> &a, double *y, std::vector<double> &dyda, int na); 
 }
 
 #endif
