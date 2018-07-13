@@ -70,7 +70,7 @@ int main()
 
 	//testing::con_tab_test(); 
 
-	testing::pearson_test(); 
+	//testing::pearson_test(); 
 
 	//testing::spearman_test(); 
 
@@ -85,6 +85,8 @@ int main()
 	//testing::gaussj_test(); 
 
 	//testing::lst_sqr_test(); 
+
+	testing::non_lin_fit_test(); 
 	
 	std::cout<<"Press enter to close console\n";
 	std::cin.get(); 

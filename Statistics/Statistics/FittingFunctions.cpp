@@ -238,6 +238,7 @@ void fit::non_lin_fit(std::vector<double> &x, std::vector<double> &y, std::vecto
 {
 	// Levenberg-Marquardt method, attempting to reduce the value chi^{2} of a fit between a set of data points x[0..na-1], y[na-1]
 	// with individual standard deviations sig[0..na-1] and a nonlinear function dependent on ma coefficients a[0..ma-1]
+	// R. Sheehan 13 - 7 - 2018
 
 	try {
 		bool c1 = ndata > 3 ? true : false;
@@ -270,7 +271,12 @@ void fit::non_lin_fit(std::vector<double> &x, std::vector<double> &y, std::vecto
 				mrqmin(x, y, sig, ndata, a, ia, ma, covar, alpha, chisq, funcs, &alamda); 
 
 				// check for convergence
-				if ( fabs( *chisq - ochisq ) < toler) break; 
+				if (fabs(*chisq - ochisq) < toler) { 
+					
+					std::cout << "Iterations converged to within tolerance after " << itnum << " steps\n"; 
+
+					break;
+				}
 
 				ochisq = *chisq;
 				
@@ -281,6 +287,13 @@ void fit::non_lin_fit(std::vector<double> &x, std::vector<double> &y, std::vecto
 			// covariance matrix, and alpha the curvature matrix
 			alamda = 0.0; 
 			mrqmin(x, y, sig, ndata, a, ia, ma, covar, alpha, chisq, funcs, &alamda);
+
+			std::cout << "The computed fit parameters are:\n";
+			for (int i = 0; i < ma; i++) {
+				std::cout << "a[" << i << "] = " << a[i] << "\n"; 
+			}
+			std::cout << "The chi-sq value for the fit is " << *chisq << "\n"; 
+			std::cout << "chi-sq / nu = "<<*chisq/(ma-1)<<"\n"; 
 		}
 		else {
 			std::string reason = "Error: fit::mrqmin()\n";
@@ -344,7 +357,7 @@ void fit::mrqmin(std::vector<double> &x, std::vector<double> &y, std::vector<dou
 
 		if (c11) {
 
-			int j, k, l, m, ncols =1;
+			int j, k, l, ncols = 1;
 			static int mfit;
 			static double ochisq;
 
@@ -355,15 +368,14 @@ void fit::mrqmin(std::vector<double> &x, std::vector<double> &y, std::vector<dou
 			std::vector<std::vector<double>> oneda; 
 
 			// Initialisation
-			if (*alamda < 0.0) {				
+			/*if (*alamda < 0.0) {				
 				atry = std::vector<double>(ma, 0.0); 
 				beta = std::vector<double>(ma, 0.0);
-				da = std::vector<double>(ma, 0.0);
+				da = std::vector<double>(ma, 0.0); 
 
-				for (mfit = 0, j = 0; j < ma; j++)
-					if (ia[j]) mfit++;
- 
-				oneda = lin_alg::array_2D(mfit, ncols); 
+				for (mfit = 0, j = 0; j < ma; j++) if (ia[j]) mfit++;
+
+				oneda = lin_alg::array_2D(mfit, ncols);
 				
 				*alamda = 0.001;
 
@@ -372,10 +384,26 @@ void fit::mrqmin(std::vector<double> &x, std::vector<double> &y, std::vector<dou
 				ochisq = (*chisq);
 
 				for (j = 0; j < ma; j++) atry[j] = a[j];
-			}
+			}*/
+
+			atry = std::vector<double>(ma, 0.0);
+			beta = std::vector<double>(ma, 0.0);
+			da = std::vector<double>(ma, 0.0);
+
+			for (mfit = 0, j = 0; j < ma; j++) if (ia[j]) mfit++;
+
+			oneda = lin_alg::array_2D(mfit, ncols);
+
+			*alamda = 0.001;
+
+			mrqcof(x, y, sig, ndata, a, ia, ma, alpha, beta, chisq, funcs);
+
+			ochisq = (*chisq);
+
+			for (j = 0; j < ma; j++) atry[j] = a[j];
 			
 			// Alter linearised fit matrix along its diagonal elements
-			for (j = 0, l = 0; l < ma; l++) {
+			/*for (j = 0, l = 0; l < ma; l++) {
 				if (ia[l]) {
 					for (j++, k = 0, m = 0; m < ma; m++) {
 						if (ia[m]) {
@@ -384,15 +412,21 @@ void fit::mrqmin(std::vector<double> &x, std::vector<double> &y, std::vector<dou
 						}
 					}
 					covar[j][j] = alpha[j][j] * (1.0 + (*alamda));
-					oneda[j][1] = beta[j];
+					oneda[j][0] = beta[j];
 				}
+			}*/
+
+			for (j = 0; j < mfit; j++) {
+				for (k = 0; k < mfit; k++) covar[j][k] = alpha[j][k];
+				covar[j][j] = alpha[j][j] * (1.0 + (*alamda));
+				oneda[j][0] = beta[j];
 			}
 
 			// solve the system of equations covar . x = oneda, store solution in oneda
 			lin_alg::gaussj(covar, mfit, oneda, ncols);
 			
 			// update the vector da
-			for (j = 0; j < mfit; j++) da[j] = oneda[j][1];
+			for (j = 0; j < mfit; j++) da[j] = oneda[j][0];
 			
 			// if solution is converged evaluate covariance matrix
 			if (*alamda == 0.0) {
@@ -408,8 +442,7 @@ void fit::mrqmin(std::vector<double> &x, std::vector<double> &y, std::vector<dou
 			}
 
 			// Examine whether or not the trial is successful
-			for (j = 0, l = 0; l < ma; l++)
-				if (ia[l]) atry[l] = a[l] + da[++j];
+			for (j = 0, l = 0; l < ma; l++)	if (ia[l]) atry[l] = a[l] + da[j++];
 
 			mrqcof(x, y, sig, ndata, atry, ia, ma, covar, da, chisq, funcs);
 
@@ -417,9 +450,10 @@ void fit::mrqmin(std::vector<double> &x, std::vector<double> &y, std::vector<dou
 			if (*chisq < ochisq) {
 				
 				*alamda *= 0.1;
+
 				ochisq = (*chisq);
 
-				for (j = 0, l = 0; l < ma; l++) {
+				/*for (j = 0, l = 0; l < ma; l++) {
 					if (ia[l]) {
 						for (j++, k = 0, m = 0; m < ma; m++) {
 							if (ia[m]) {
@@ -430,12 +464,21 @@ void fit::mrqmin(std::vector<double> &x, std::vector<double> &y, std::vector<dou
 						beta[j] = da[j];
 						a[l] = atry[l];
 					}
+				}*/
+
+				for (j = 0; j < mfit; j++) {
+					for(k=0; k < mfit; k++) alpha[j][k] = covar[j][k];
+					beta[j] = da[j];
 				}
+
+				for (l = 0; l < ma; l++) a[l] = atry[l]; 
 			}
-			else { // solution is not accurate repeat process with updated alambda value
+			else { // solution is not accurate repeat process with updated alamda value
 				*alamda *= 10.0;
 				*chisq = ochisq;
 			}
+
+			oneda.clear(); da.clear(); beta.clear(); atry.clear();
 		}
 		else {
 			std::string reason = "Error: fit::mrqmin()\n";
@@ -495,8 +538,7 @@ void fit::mrqcof(std::vector<double> &x, std::vector<double> &y, std::vector<dou
 
 			std::vector<double> dyda(ma, 0.0);
 
-			for (j = 0; j < ma; j++)
-				if (ia[j]) mfit++;
+			for (j = 0; j < ma; j++) if (ia[j]) mfit++;
 
 			// initialise symmetric alpha, beta	
 			for (j = 0; j < mfit; j++) {
@@ -508,17 +550,22 @@ void fit::mrqcof(std::vector<double> &x, std::vector<double> &y, std::vector<dou
 
 			// sum loop over all data
 			for (i = 0; i < ndata; i++) {
+
 				(*funcs)(x[i], a, &ymod, dyda, ma);
+
 				sig2i = 1.0 / (sig[i] * sig[i]);
+
 				dy = y[i] - ymod;
+
 				for (j = 0, l = 0; l < ma; l++) {
 					if (ia[l]) {
 						wt = dyda[l] * sig2i;
-						for (j++, k = 0, m = 0; m <= l; m++)
-							if (ia[m]) alpha[j][++k] += wt * dyda[m];
-						beta[j] += dy * wt;
+						for (k = 0, m = 0; m <= l; m++)
+							if (ia[m]) alpha[j][k++] += wt * dyda[m];
+						beta[j++] += dy * wt;
 					}
 				}
+
 				*chisq += dy * dy*sig2i; // find chi^{2}
 			}
 

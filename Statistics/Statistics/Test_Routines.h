@@ -53,7 +53,9 @@ namespace testing{
 
 	void lst_sqr_test(); 
 
-	void fgauss(double x, std::vector<double> &a, double *y, std::vector<double> &dyda, int na); 
+	void fgauss(double x, std::vector<double> &a, double *y, std::vector<double> &dyda, int &na); 
+
+	void non_lin_fit_test(); 
 }
 
 #endif

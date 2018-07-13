@@ -1120,7 +1120,7 @@ void testing::lst_sqr_test()
 	std::cout << "\n";
 }
 
-void testing::fgauss(double x, std::vector<double> &a, double *y, std::vector<double> &dyda, int na)
+void testing::fgauss(double x, std::vector<double> &a, double *y, std::vector<double> &dyda, int &na)
 {
 	// y(x;a) is the sum of na/3 Gaussians. The amplitude, centre and width of the Gaussians are stored in a
 	// a[i] = amp_{k}, a[i+1] = centre_{k}, a[i+2] = width_{k}
@@ -1145,4 +1145,76 @@ void testing::fgauss(double x, std::vector<double> &a, double *y, std::vector<do
 	catch (std::invalid_argument &e) {
 		std::cerr << e.what();
 	}
+}
+
+void testing::non_lin_fit_test()
+{
+	// routine which determines if the Levenberg-Margquardt method has been implemented correctly
+	// R. Sheehan 13 - 7 - 2018
+
+	// Going to use the multi-peak Gaussian with noise as the test program
+
+	// Generate data to use in the fit process
+	int npts, npars; 
+	long idum = -911; 
+	double spread, xlow, xhigh, deltax, xpos, yval;
+
+	xlow = 0.0; xhigh = 10.0; deltax = 0.1; 
+	npts = (int)( 1.0 + ( (xhigh - xlow) / deltax) ); 
+
+	std::vector<double> xdata(npts, 0.0); 
+	std::vector<double> ydata(npts, 0.0);
+	std::vector<double> sigdata(npts, 0.0);
+
+	npars = 6; 
+	std::vector<double> a(npars, 0.0); 
+	
+	std::vector<double> dyda(npars, 0.0);
+
+	// data stored in array a in the form a[i] = amp_{k}, a[i+1] = centre_{k}, a[i+2] = width_{k}
+	a[0] = 5.0; a[1] = 2.0; a[2] = 3.0; 
+	a[3] = 3.0; a[4] = 5.0; a[5] = 1.0; 
+
+	spread = 0.01; 
+	xpos = xlow; 
+	for (int i = 0; i < npts; i++) {
+
+		fgauss(xpos, a, &yval, dyda, npars); // evaluate the Gaussian function
+
+		xdata[i] = xpos;
+
+		yval *= rng::gasdev1(&idum, 1.0, template_funcs::DSQR(spread)); // add noise to the signal value
+
+		ydata[i] = yval;
+
+		sigdata[i] = spread * yval;
+
+		xpos += deltax;
+	}
+
+	// Perform the best it search for the data set
+	int ITMAX = 10; 
+
+	double TOL = 0.01; 
+	double chisq = 0.0; 
+
+	// Declare the necessary arrays
+	std::vector<std::vector<double>> covar = lin_alg::array_2D(npars, npars); 
+	std::vector<std::vector<double>> alpha = lin_alg::array_2D(npars, npars);
+
+	// define the initial guesses to the parameters to be determined
+	std::vector<double> a_guess(npars, 0.0);
+	std::vector<int> ia(npars, 1); // tell the algorithm that you want to locate all parameters 
+
+	a_guess[0] = 4.5; a_guess[1] = 2.2; a_guess[2] = 2.8;
+	a_guess[3] = 2.5; a_guess[4] = 4.3; a_guess[5] = 1.4;
+
+	/*ia[0] = 0; ia[1] = 0; ia[2] = 0; 
+	a_guess[0] = 5.0; a_guess[1] = 2.0; a_guess[2] = 3.0;*/
+
+	fit::non_lin_fit(xdata, ydata, sigdata, npts, a_guess, ia, npars, covar, alpha, &chisq, fgauss, ITMAX, TOL); 
+
+	xdata.clear(); ydata.clear(); sigdata.clear(); 
+	a_guess.clear(); ia.clear(); covar.clear(); alpha.clear(); 
+	a.clear(); 
 }
