@@ -234,24 +234,259 @@ void fit::lfit(std::vector<double> &x, std::vector<double> &y, std::vector<doubl
 	}
 }
 
-void fit::mrqcof(std::vector<double> &x, std::vector<double> &y, std::vector<double> &sig, int &ndata, std::vector<double> &a, std::vector<int> &ia, int &ma, std::vector<std::vector<double>> &alpha, std::vector<double> &beta, double *chisq, void(*funcs)(double, std::vector<double> &, double *, std::vector<double> &, int&))
+void fit::non_lin_fit(std::vector<double> &x, std::vector<double> &y, std::vector<double> &sig, int &ndata, std::vector<double> &a, std::vector<int> &ia, int &ma, std::vector<std::vector<double>> &covar, std::vector<std::vector<double>> &alpha, double *chisq, void(*funcs)(double, std::vector<double> &, double *, std::vector<double> &, int &), int &itmax, double &toler)
 {
-	// Used by mrqmin to evaluate the linearised alpha and beta arrays and to compute chi^{2}
+	// Levenberg-Marquardt method, attempting to reduce the value chi^{2} of a fit between a set of data points x[0..na-1], y[na-1]
+	// with individual standard deviations sig[0..na-1] and a nonlinear function dependent on ma coefficients a[0..ma-1]
+
+	try {
+		bool c1 = ndata > 3 ? true : false;
+		bool c2 = (int)(x.size()) == ndata ? true : false;
+		bool c3 = (int)(y.size()) == ndata ? true : false;
+		bool c4 = (int)(sig.size()) == ndata ? true : false;
+		bool c5 = ma > 0 ? true : false;
+		bool c6 = (int)(a.size()) == ma ? true : false;
+		bool c7 = (int)(ia.size()) == ma ? true : false;
+		std::pair<int, int> sze = lin_alg::array_2D_size(alpha);
+		bool c9 = sze.first == ma ? true : false;
+		bool c10 = sze.second == ma ? true : false;
+		std::pair<int, int> szea = lin_alg::array_2D_size(covar);
+		bool c9a = szea.first == ma ? true : false;
+		bool c10a = szea.second == ma ? true : false;
+		bool c11 = c1 && c2 && c3 && c4 && c5 && c6 && c7 && c9 && c10 && c9a && c10a ? true : false;
+
+		if (c11) {
+
+			int itnum = 0;
+			double ochisq, alamda; 
+
+			ochisq = *chisq; 
+
+			while (itnum < itmax) {
+
+				if (itnum == 0) alamda = -1.0; 
+
+				// call mrqmin routine until convergence is achieved
+				mrqmin(x, y, sig, ndata, a, ia, ma, covar, alpha, chisq, funcs, &alamda); 
+
+				// check for convergence
+				if ( fabs( *chisq - ochisq ) < toler) break; 
+
+				ochisq = *chisq;
+				
+				itnum++; 
+			}
+
+			// Final call to mrqmin with alamda = 0, so that covar[1..ma][1..ma] returns the 
+			// covariance matrix, and alpha the curvature matrix
+			alamda = 0.0; 
+			mrqmin(x, y, sig, ndata, a, ia, ma, covar, alpha, chisq, funcs, &alamda);
+		}
+		else {
+			std::string reason = "Error: fit::mrqmin()\n";
+			if (!c1) reason += "No. data points is not correct ndata = " + template_funcs::toString(ndata) + "\n";
+			if (!c2) reason += "x does not have correct size x.size() = " + template_funcs::toString(x.size()) + "\n";
+			if (!c3) reason += "y does not have correct size y.size() = " + template_funcs::toString(y.size()) + "\n";
+			if (!c4) reason += "sig does not have correct size sig.size() = " + template_funcs::toString(sig.size()) + "\n";
+			if (!c5) reason += "No. fit parameters is not correct ma = " + template_funcs::toString(ma) + "\n";
+			if (!c6) reason += "a does not have correct size a.size() = " + template_funcs::toString(a.size()) + "\n";
+			if (!c7) reason += "ia does not have correct size ia.size() = " + template_funcs::toString(ia.size()) + "\n";
+			if (!c9 || !c10) reason += "alpha does not have correct size alpha.size() = ( " + template_funcs::toString(sze.first) + " , " + template_funcs::toString(sze.second) + " )\n";
+			if (!c9a || !c10a) reason += "covar does not have correct size covar.size() = ( " + template_funcs::toString(szea.first) + " , " + template_funcs::toString(szea.second) + " )\n";
+
+			throw std::invalid_argument(reason);
+		}
+	}
+	catch (std::invalid_argument &e) {
+		std::cerr << e.what();
+	}
+}
+
+void fit::mrqmin(std::vector<double> &x, std::vector<double> &y, std::vector<double> &sig, int &ndata, std::vector<double> &a, std::vector<int> &ia, int &ma, std::vector<std::vector<double>> &covar, std::vector<std::vector<double>> &alpha, double *chisq, void(*funcs)(double, std::vector<double> &, double *, std::vector<double> &, int &), double *alamda)
+{
+	// Levenberg-Marquardt method, attempting to reduce the value chi^{2} of a fit between a set of data points x[0..na-1], y[na-1]
+	// with individual standard deviations sig[0..na-1] and a nonlinear function dependent on ma coefficients a[0..ma-1]
+
+	// The input array ia[0..ma-1] indicates by nonzero entries those components of a that should be fitted for, and by zero
+	// entries those components that should be held fixed at their input values. 
+	
+	// The program returns current best - fit values for the parameters in a[0..ma-1] and chi^{2}.  
+	// The arrays covar[0..ma-1][0..ma-1] and alpha[0..ma-1][0..ma-1] are used as working space during most iterations. 
+	
+	// Routine funcs evaluates the fitting function and its derivatives dyda[0..ma-1] with respect to the fitting parameters a at x. 
+	
+	// On the first call provide an initial guess for the parameters a, and set alamda<0 for initialization (which then sets 
+	// alamda = .001). If a step succeeds chisq becomes smaller and alamda decreases by a factor of 10. If a step fails alamda 
+	// grows by a factor of 10
+
+	// You must call this routine repeatedly until convergence is achieved. Then, make one final 
+	// call with alamda = 0, so that covar[1..ma][1..ma] returns the covariance matrix, and alpha the curvature matrix. 
+	// (Parameters held fixed will return zero covariances.)
+
+	// R. Sheehan 13 - 7 - 2018
 
 	try {
 	
-		bool c1 = ndata > 3 ? true : false; 
-		bool c2 = (int)(x.size()) == ndata ? true : false; 
+		bool c1 = ndata > 3 ? true : false;
+		bool c2 = (int)(x.size()) == ndata ? true : false;
+		bool c3 = (int)(y.size()) == ndata ? true : false;
+		bool c4 = (int)(sig.size()) == ndata ? true : false;
+		bool c5 = ma > 0 ? true : false;
+		bool c6 = (int)(a.size()) == ma ? true : false;
+		bool c7 = (int)(ia.size()) == ma ? true : false;
+		std::pair<int, int> sze = lin_alg::array_2D_size(alpha);
+		bool c9 = sze.first == ma ? true : false;
+		bool c10 = sze.second == ma ? true : false;
+		std::pair<int, int> szea = lin_alg::array_2D_size(covar);
+		bool c9a = szea.first == ma ? true : false;
+		bool c10a = szea.second == ma ? true : false;
+		bool c11 = c1 && c2 && c3 && c4 && c5 && c6 && c7 && c9 && c10 && c9a && c10a ? true : false;
+
+		if (c11) {
+
+			int j, k, l, m, ncols =1;
+			static int mfit;
+			static double ochisq;
+
+			std::vector<double> da;
+			std::vector<double> beta; 
+			std::vector<double> atry; 
+
+			std::vector<std::vector<double>> oneda; 
+
+			// Initialisation
+			if (*alamda < 0.0) {				
+				atry = std::vector<double>(ma, 0.0); 
+				beta = std::vector<double>(ma, 0.0);
+				da = std::vector<double>(ma, 0.0);
+
+				for (mfit = 0, j = 0; j < ma; j++)
+					if (ia[j]) mfit++;
+ 
+				oneda = lin_alg::array_2D(mfit, ncols); 
+				
+				*alamda = 0.001;
+
+				mrqcof(x, y, sig, ndata, a, ia, ma, alpha, beta, chisq, funcs);
+				
+				ochisq = (*chisq);
+
+				for (j = 0; j < ma; j++) atry[j] = a[j];
+			}
+			
+			// Alter linearised fit matrix along its diagonal elements
+			for (j = 0, l = 0; l < ma; l++) {
+				if (ia[l]) {
+					for (j++, k = 0, m = 0; m < ma; m++) {
+						if (ia[m]) {
+							k++;
+							covar[j][k] = alpha[j][k];
+						}
+					}
+					covar[j][j] = alpha[j][j] * (1.0 + (*alamda));
+					oneda[j][1] = beta[j];
+				}
+			}
+
+			// solve the system of equations covar . x = oneda, store solution in oneda
+			lin_alg::gaussj(covar, mfit, oneda, ncols);
+			
+			// update the vector da
+			for (j = 0; j < mfit; j++) da[j] = oneda[j][1];
+			
+			// if solution is converged evaluate covariance matrix
+			if (*alamda == 0.0) {
+				covsrt(covar, ma, ia, mfit);
+				covsrt(alpha, ma, ia, mfit);
+
+				oneda.clear(); 
+				da.clear(); 
+				beta.clear(); 
+				atry.clear(); 
+				
+				return;
+			}
+
+			// Examine whether or not the trial is successful
+			for (j = 0, l = 0; l < ma; l++)
+				if (ia[l]) atry[l] = a[l] + da[++j];
+
+			mrqcof(x, y, sig, ndata, atry, ia, ma, covar, da, chisq, funcs);
+
+			// If success, accept the new solution
+			if (*chisq < ochisq) {
+				
+				*alamda *= 0.1;
+				ochisq = (*chisq);
+
+				for (j = 0, l = 0; l < ma; l++) {
+					if (ia[l]) {
+						for (j++, k = 0, m = 0; m < ma; m++) {
+							if (ia[m]) {
+								k++;
+								alpha[j][k] = covar[j][k];
+							}
+						}
+						beta[j] = da[j];
+						a[l] = atry[l];
+					}
+				}
+			}
+			else { // solution is not accurate repeat process with updated alambda value
+				*alamda *= 10.0;
+				*chisq = ochisq;
+			}
+		}
+		else {
+			std::string reason = "Error: fit::mrqmin()\n";
+			if (!c1) reason += "No. data points is not correct ndata = " + template_funcs::toString(ndata) + "\n";
+			if (!c2) reason += "x does not have correct size x.size() = " + template_funcs::toString(x.size()) + "\n";
+			if (!c3) reason += "y does not have correct size y.size() = " + template_funcs::toString(y.size()) + "\n";
+			if (!c4) reason += "sig does not have correct size sig.size() = " + template_funcs::toString(sig.size()) + "\n";
+			if (!c5) reason += "No. fit parameters is not correct ma = " + template_funcs::toString(ma) + "\n";
+			if (!c6) reason += "a does not have correct size a.size() = " + template_funcs::toString(a.size()) + "\n";
+			if (!c7) reason += "ia does not have correct size ia.size() = " + template_funcs::toString(ia.size()) + "\n";
+			if (!c9 || !c10) reason += "alpha does not have correct size alpha.size() = ( " + template_funcs::toString(sze.first) + " , " + template_funcs::toString(sze.second) + " )\n";
+			if (!c9a || !c10a) reason += "covar does not have correct size covar.size() = ( " + template_funcs::toString(szea.first) + " , " + template_funcs::toString(szea.second) + " )\n";
+
+			throw std::invalid_argument(reason);
+		}
+	}
+	catch (std::invalid_argument &e) {
+		std::cerr << e.what();
+	}
+}
+
+void fit::mrqcof(std::vector<double> &x, std::vector<double> &y, std::vector<double> &sig, int &ndata, std::vector<double> &a, std::vector<int> &ia, int &ma, std::vector<std::vector<double>> &alpha, std::vector<double> &beta, double *chisq, void(*funcs)(double, std::vector<double> &, double *, std::vector<double> &, int&))
+{
+	// Used by mrqmin to evaluate the linearised alpha and beta arrays and to compute chi^{2} of a fit between a set of data points 
+	// x[0..na-1], y[na-1] with individual standard deviations sig[0..na-1] and a nonlinear function dependent on ma coefficients 
+	// a[0..ma-1]
+
+	// The input array ia[0..ma-1] indicates by nonzero entries those components of a that should be fitted for, and by zero
+	// entries those components that should be held fixed at their input values. 
+
+	// This functions computes the system of linear equations that must be solved for at each step
+	// alpha . delta = beta
+
+	// Routine funcs evaluates the fitting function and its derivatives dyda[0..ma-1] with respect to the fitting parameters a at x. 
+
+	// R. Sheehan 13 - 7 - 2018
+
+	try {
+
+		bool c1 = ndata > 3 ? true : false;
+		bool c2 = (int)(x.size()) == ndata ? true : false;
 		bool c3 = (int)(y.size()) == ndata ? true : false;
 		bool c4 = (int)(sig.size()) == ndata ? true : false;
 		bool c5 = ma > 0 ? true : false;
 		bool c6 = (int)(a.size()) == ma ? true : false;
 		bool c7 = (int)(ia.size()) == ma ? true : false;
 		bool c8 = (int)(beta.size()) == ma ? true : false;
-		std::pair<int, int> sze = lin_alg::array_2D_size(alpha); 
+		std::pair<int, int> sze = lin_alg::array_2D_size(alpha);
 		bool c9 = sze.first == ma ? true : false;
 		bool c10 = sze.second == ma ? true : false;
-		bool c11 = c1 && c2 && c3 && c4 && c5 && c6 && c7 && c8 && c9 && c10 ? true : false; 
+		bool c11 = c1 && c2 && c3 && c4 && c5 && c6 && c7 && c8 && c9 && c10 ? true : false;
 
 		if (c11) {
 
@@ -291,20 +526,24 @@ void fit::mrqcof(std::vector<double> &x, std::vector<double> &y, std::vector<dou
 			for (j = 1; j < mfit; j++)
 				for (k = 0; k<j; k++) alpha[k][j] = alpha[j][k];
 
-			dyda.clear();		
+			dyda.clear();
 		}
 		else {
 			std::string reason = "Error: fit::mrqcof()\n";
-			
-			throw std::invalid_argument(reason); 
+			if (!c1) reason += "No. data points is not correct ndata = " + template_funcs::toString(ndata) + "\n";
+			if (!c2) reason += "x does not have correct size x.size() = " + template_funcs::toString(x.size()) + "\n";
+			if (!c3) reason += "y does not have correct size y.size() = " + template_funcs::toString(y.size()) + "\n";
+			if (!c4) reason += "sig does not have correct size sig.size() = " + template_funcs::toString(sig.size()) + "\n";
+			if (!c5) reason += "No. fit parameters is not correct ma = " + template_funcs::toString(ma) + "\n";
+			if (!c6) reason += "a does not have correct size a.size() = " + template_funcs::toString(a.size()) + "\n";
+			if (!c7) reason += "ia does not have correct size ia.size() = " + template_funcs::toString(ia.size()) + "\n";
+			if (!c8) reason += "beta does not have correct size beta.size() = " + template_funcs::toString(beta.size()) + "\n";
+			if (!c9 || !c10) reason += "alpha does not have correct size alpha.size() = ( " + template_funcs::toString(sze.first) + " , " + template_funcs::toString(sze.second) + " )\n";
+
+			throw std::invalid_argument(reason);
 		}
 	}
 	catch (std::invalid_argument &e) {
 		std::cerr << e.what();
-	} 
-}
-
-void fit::mrqmin(std::vector<double> &x, std::vector<double> &y, std::vector<double> &sig, int &ndata, std::vector<double> &a, std::vector<int> &ia, int &ma, std::vector<std::vector<double>> &covar, std::vector<std::vector<double>> &alpha, double *chisq, void(*funcs)(double, std::vector<double> &, double *, std::vector<double> &, int &), double *alamda)
-{
-	
+	}
 }
