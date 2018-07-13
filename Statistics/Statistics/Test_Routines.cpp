@@ -1212,6 +1212,13 @@ void testing::non_lin_fit_test()
 	/*ia[0] = 0; ia[1] = 0; ia[2] = 0; 
 	a_guess[0] = 5.0; a_guess[1] = 2.0; a_guess[2] = 3.0;*/
 
+	/*ia[0] = 0; ia[3] = 0; 
+	a_guess[0] = 5.0; a_guess[3] = 3.0;*/
+
+	// Need to be fitting a minimum of two parameters
+	/*ia[4] = 0; 
+	a_guess[4] = 4.0;*/ 
+
 	fit::non_lin_fit(xdata, ydata, sigdata, npts, a_guess, ia, npars, covar, alpha, &chisq, fgauss, ITMAX, TOL); 
 
 	xdata.clear(); ydata.clear(); sigdata.clear(); 

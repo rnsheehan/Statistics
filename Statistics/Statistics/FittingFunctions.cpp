@@ -365,7 +365,8 @@ void fit::mrqmin(std::vector<double> &x, std::vector<double> &y, std::vector<dou
 			std::vector<double> beta; 
 			std::vector<double> atry; 
 
-			std::vector<std::vector<double>> oneda; 
+			std::vector<std::vector<double>> oneda;
+			std::vector<std::vector<double>> temp;
 
 			// Initialisation
 			/*if (*alamda < 0.0) {				
@@ -393,6 +394,7 @@ void fit::mrqmin(std::vector<double> &x, std::vector<double> &y, std::vector<dou
 			for (mfit = 0, j = 0; j < ma; j++) if (ia[j]) mfit++;
 
 			oneda = lin_alg::array_2D(mfit, ncols);
+			temp = lin_alg::array_2D(mfit, mfit);
 
 			*alamda = 0.001;
 
@@ -419,24 +421,25 @@ void fit::mrqmin(std::vector<double> &x, std::vector<double> &y, std::vector<dou
 			for (j = 0; j < mfit; j++) {
 				for (k = 0; k < mfit; k++) covar[j][k] = alpha[j][k];
 				covar[j][j] = alpha[j][j] * (1.0 + (*alamda));
+				for (k = 0; k < mfit; k++) temp[j][k] = covar[j][k]; 
 				oneda[j][0] = beta[j];
 			}
 
 			// solve the system of equations covar . x = oneda, store solution in oneda
-			lin_alg::gaussj(covar, mfit, oneda, ncols);
+			lin_alg::gaussj(temp, mfit, oneda, ncols);
 			
 			// update the vector da
-			for (j = 0; j < mfit; j++) da[j] = oneda[j][0];
+			for (j = 0; j < mfit; j++) {
+				for (k = 0; k < mfit; k++) covar[j][k] = temp[j][k];
+				da[j] = oneda[j][0];
+			}
 			
 			// if solution is converged evaluate covariance matrix
 			if (*alamda == 0.0) {
 				covsrt(covar, ma, ia, mfit);
 				covsrt(alpha, ma, ia, mfit);
 
-				oneda.clear(); 
-				da.clear(); 
-				beta.clear(); 
-				atry.clear(); 
+				oneda.clear(); temp.clear(); da.clear(); beta.clear(); atry.clear(); 
 				
 				return;
 			}
@@ -478,7 +481,7 @@ void fit::mrqmin(std::vector<double> &x, std::vector<double> &y, std::vector<dou
 				*chisq = ochisq;
 			}
 
-			oneda.clear(); da.clear(); beta.clear(); atry.clear();
+			oneda.clear(); temp.clear(); da.clear(); beta.clear(); atry.clear();
 		}
 		else {
 			std::string reason = "Error: fit::mrqmin()\n";
