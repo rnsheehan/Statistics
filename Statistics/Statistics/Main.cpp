@@ -80,7 +80,7 @@ int main()
 
 	//testing::kendall_test_2();
 
-	//testing::lin_fit_test(); 
+	testing::lin_fit_test(); 
 
 	//testing::gaussj_test(); 
 

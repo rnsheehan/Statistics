@@ -288,12 +288,17 @@ void fit::non_lin_fit(std::vector<double> &x, std::vector<double> &y, std::vecto
 			alamda = 0.0; 
 			mrqmin(x, y, sig, ndata, a, ia, ma, covar, alpha, chisq, funcs, &alamda);
 
+			double nu = ndata - ma; 
+			double q = probability::gammq(0.5*nu, 0.5*(*chisq)); // goodness of fit
+
 			std::cout << "The computed fit parameters are:\n";
 			for (int i = 0; i < ma; i++) {
-				std::cout << "a[" << i << "] = " << a[i] << "\n"; 
+				std::cout << "a[" << i << "] = " << a[i] << "\n";
 			}
-			std::cout << "The chi-sq value for the fit is " << *chisq << "\n"; 
-			std::cout << "chi-sq / nu = "<<*chisq/(ma-1)<<"\n"; 
+			std::cout << "\nThe chi-sq value for the fit is " << *chisq << "\n"; 
+			std::cout << "nu for the fit is " << (ndata - ma) << "\n"; 
+			std::cout << "chi-sq / nu = "<<*chisq/(ndata - ma)<<"\n";
+			std::cout << "goodness of fit = " << q << "\n\n"; 
 		}
 		else {
 			std::string reason = "Error: fit::mrqmin()\n";
@@ -596,4 +601,13 @@ void fit::mrqcof(std::vector<double> &x, std::vector<double> &y, std::vector<dou
 	catch (std::invalid_argument &e) {
 		std::cerr << e.what();
 	}
+}
+
+void fit::goodness_of_fit()
+{
+	// To characterise a fit as good
+	// nu = no. data points - no. fit parameters
+	// chi^{2} / nu ~ 1
+	// q = gammq(nu/2, chi^{2}/2) >= 0.1
+	// R^{2} ~ 1
 }

@@ -928,6 +928,8 @@ void testing::lin_fit_test()
 		std::cout << std::setw(12) << "b = " << std::setw(10) << b;
 		std::cout << std::setw(19) << "uncertainty: " << std::setw(10) << sigb << "\n";
 		std::cout << std::setw(19) << "chi-squared = " << std::setw(15) << chi2 << "\n";
+		std::cout << std::setw(19) << "nu = " << std::setw(15) << NPT - 2 << "\n";
+		std::cout << std::setw(19) << "chi-squared / nu = " << std::setw(15) << chi2 / (NPT - 2) << "\n";
 		std::cout << std::setw(23) << "goodness-of-fit = " << std::setw(11) << q << "\n";
 		mwt++; 
 	}
@@ -1207,12 +1209,12 @@ void testing::non_lin_fit_test()
 	std::vector<int> ia(npars, 1); // tell the algorithm that you want to locate all parameters 
 
 	// Good guesses
-	/*a_guess[0] = 4.5; a_guess[1] = 2.2; a_guess[2] = 2.8;
-	a_guess[3] = 2.5; a_guess[4] = 4.3; a_guess[5] = 1.4;*/
+	a_guess[0] = 4.5; a_guess[1] = 2.2; a_guess[2] = 2.8;
+	a_guess[3] = 2.5; a_guess[4] = 4.3; a_guess[5] = 1.4;
 
 	// Bad guesses
-	a_guess[0] = 4.0; a_guess[1] = -2.2; a_guess[2] = 1.8;
-	a_guess[3] = 0.5; a_guess[4] = -3.3; a_guess[5] = 0.4;
+	/*a_guess[0] = 4.0; a_guess[1] = -2.2; a_guess[2] = 1.8;
+	a_guess[3] = 0.5; a_guess[4] = -3.3; a_guess[5] = 0.4;*/
 
 	// Can you add something that tells the user that the fit is good or bad?
 	// How to interpret the chisq value correctly in terms of goodness of fit?
