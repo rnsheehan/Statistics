@@ -62,6 +62,44 @@ bool lin_alg::array_2D_square(std::vector< std::vector< double > > &name)
 	return sizes.first == sizes.second ? true : false; 
 }
 
+bool lin_alg::array_2D_non_empty(std::vector< std::vector< double > > &name)
+{
+	// test a 2D array to see if it is non-empty
+	// R. Sheehan 18 - 7 - 2018
+
+	std::pair<int, int> sizes = array_2D_size(name);
+
+	return sizes.first > 0 && sizes.second > 0 ? true : false; 
+}
+
+void lin_alg::array_2d_print(std::vector<std::vector<double>> &name)
+{
+	// print a 2D array to the console
+	// R. Sheehan 18 - 7 - 2018
+
+	try {
+	
+		if (array_2D_non_empty(name)) {
+			
+			for (int i = 0; i < (int)(name.size()); i++) {
+				for (int j = 0; j < (int)(name[0].size()); j++)
+					std::cout << name[i][j] << " "; 
+				std::cout << "\n"; 
+			}
+
+		}
+		else {
+			std::string reason = "Error: void lin_alg::array_2d_print()\n"; 
+			reason += "Input array is empty\n"; 
+			throw std::invalid_argument(reason); 
+		}
+	}
+	catch (std::invalid_argument &e) {
+		useful_funcs::exit_failure_output(e.what());
+		exit(EXIT_FAILURE);
+	}
+}
+
 void lin_alg::gaussj(std::vector< std::vector< double > > &a, int &n, std::vector< std::vector< double > > &b, int &m)
 {
 	// Linear equation solution by Gauss-Jordan elimination, equation (2.1.1) above. a[1..n][1..n]

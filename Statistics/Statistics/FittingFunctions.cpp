@@ -296,8 +296,8 @@ void fit::non_lin_fit(std::vector<double> &x, std::vector<double> &y, std::vecto
 				std::cout << "a[" << i << "] = " << a[i] << "\n";
 			}
 			std::cout << "\nThe chi-sq value for the fit is " << *chisq << "\n"; 
-			std::cout << "nu for the fit is " << (ndata - ma) << "\n"; 
-			std::cout << "chi-sq / nu = "<<*chisq/(ndata - ma)<<"\n";
+			std::cout << "nu for the fit is " << nu << "\n"; 
+			std::cout << "chi-sq / nu = "<<*chisq/nu<<"\n";
 			std::cout << "goodness of fit = " << q << "\n\n"; 
 		}
 		else {

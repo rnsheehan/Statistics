@@ -1052,8 +1052,8 @@ void testing::lst_sqr_test()
 {
 	// Make a polynomial fit to a set of data
 	// 
-	int i, j, NPT = 100, NTERM = 5; 
-	double SPREAD = 0.1, chisq; 
+	int i, j, NPT = 100, NTERM = 5, nu = NPT - NTERM; 
+	double SPREAD = 0.1, chisq, q; 
 	long idum = (-911); 
 
 	std::vector<int> ia(NTERM); 
@@ -1076,6 +1076,8 @@ void testing::lst_sqr_test()
 	// perform least squares fit
 	fit::lfit(x, y, sig, NPT, a, ia, NTERM, covar, &chisq, funcs); 
 
+	q = probability::gammq(0.5*nu, 0.5*(chisq)); // goodness of fit
+
 	// output results
 	std::cout << "\n" << std::setw(11) << "parameter"; 
 	std::cout << std::setw(22) << "uncertainty\n"; 
@@ -1084,7 +1086,10 @@ void testing::lst_sqr_test()
 		std::cout << "a[" << i << "] = " << std::setw(8) << a[i]; 
 		std::cout << std::setw(13) << sqrt(covar[i][i]) << "\n"; 
 	}
-	std::cout << "chi-squared = " << std::setw(12) << chisq << "\n\n"; 
+	std::cout << "chi-squared = " << std::setw(12) << chisq << "\n";
+	std::cout << "nu = " << nu << "\n"; 
+	std::cout << "chi_squared / nu = " << chisq / nu << "\n";
+	std::cout << "goodness-of-fit = " << q << "\n\n"; 
 	std::cout << "full covariance matrix\n";
 	std::cout << std::scientific << std::setprecision(4); 
 	for (i = 0; i < NTERM; i++) {
@@ -1103,6 +1108,9 @@ void testing::lst_sqr_test()
 	// perform least squares fit
 	fit::lfit(x, y, sig, NPT, a, ia, NTERM, covar, &chisq, funcs);
 
+	nu = NPT - 3;
+	q = probability::gammq(0.5*nu, 0.5*(chisq)); // goodness of fit
+
 	// output results
 	std::cout << "\n" << std::setw(11) << "parameter";
 	std::cout << std::setw(22) << "uncertainty\n";
@@ -1111,7 +1119,10 @@ void testing::lst_sqr_test()
 		std::cout << "a[" << i << "] = " << std::setw(8) << a[i];
 		std::cout << std::setw(13) << sqrt(covar[i][i]) << "\n";
 	}
-	std::cout << "chi-squared = " << std::setw(12) << chisq << "\n\n";
+	std::cout << "chi-squared = " << std::setw(12) << chisq << "\n";
+	std::cout << "nu = " << nu << "\n";
+	std::cout << "chi_squared / nu = " << chisq / nu << "\n";
+	std::cout << "goodness-of-fit = " << q << "\n\n";
 	std::cout << "full covariance matrix\n";
 	std::cout << std::scientific << std::setprecision(4);
 	for (i = 0; i < NTERM; i++) {
@@ -1158,7 +1169,7 @@ void testing::non_lin_fit_test()
 
 	// Generate data to use in the fit process
 	int npts, npars; 
-	long idum = -911; 
+	long idum = (-911); 
 	double spread, xlow, xhigh, deltax, xpos, yval;
 
 	xlow = 0.0; xhigh = 10.0; deltax = 0.1; 
@@ -1209,8 +1220,8 @@ void testing::non_lin_fit_test()
 	std::vector<int> ia(npars, 1); // tell the algorithm that you want to locate all parameters 
 
 	// Good guesses
-	a_guess[0] = 4.5; a_guess[1] = 2.2; a_guess[2] = 2.8;
-	a_guess[3] = 2.5; a_guess[4] = 4.3; a_guess[5] = 1.4;
+	/*a_guess[0] = 4.5; a_guess[1] = 2.2; a_guess[2] = 2.8;
+	a_guess[3] = 2.5; a_guess[4] = 4.3; a_guess[5] = 1.4;*/
 
 	// Bad guesses
 	/*a_guess[0] = 4.0; a_guess[1] = -2.2; a_guess[2] = 1.8;
@@ -1219,8 +1230,9 @@ void testing::non_lin_fit_test()
 	// Can you add something that tells the user that the fit is good or bad?
 	// How to interpret the chisq value correctly in terms of goodness of fit?
 
-	/*ia[0] = 0; ia[1] = 0; ia[2] = 0; 
-	a_guess[0] = 5.0; a_guess[1] = 2.0; a_guess[2] = 3.0;*/
+	ia[0] = 0; ia[1] = 0; ia[2] = 0; 
+	a_guess[0] = 5.0; a_guess[1] = 2.0; a_guess[2] = 3.0; // these parameters are fixed
+	a_guess[3] = 2.0; a_guess[4] = 4.3; a_guess[5] = 1.4; // these are the guesses for the parameters being sought
 
 	/*ia[0] = 0; ia[3] = 0; 
 	a_guess[0] = 5.0; a_guess[3] = 3.0;*/
