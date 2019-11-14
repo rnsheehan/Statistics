@@ -86,7 +86,7 @@ int main()
 
 	//testing::lst_sqr_test(); 
 
-	testing::non_lin_fit_test(); 
+	testing::non_lin_fit_test();
 	
 	std::cout<<"Press enter to close console\n";
 	std::cin.get(); 

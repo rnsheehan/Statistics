@@ -960,9 +960,20 @@ void testing::gaussj_test()
 	b[2][0] = -2; 
 	b[3][0] = 4;
 
+	std::cout << "Matrix A is\n";
+	for (int i = 0; i < nrows; i++) {
+		for (int j = 0; j < ncols; j++)
+			std::cout << A[i][j] << " ";
+		std::cout << "\n";
+	}
+	std::cout << "\nVector b is\n";
+	for (int i = 0; i < nrows; i++) {
+		std::cout << b[i][0] << "\n";
+	}
+
 	lin_alg::gaussj(A, nrows, b, ncolsb); 
 
-	std::cout << "Inverse of A is\n"; 
+	std::cout << "\nInverse of A is\n"; 
 	for (int i = 0; i < nrows; i++) {
 		for (int j = 0; j < ncols; j++)
 			std::cout << A[i][j] << " "; 
@@ -1167,6 +1178,9 @@ void testing::non_lin_fit_test()
 
 	// Going to use the multi-peak Gaussian with noise as the test program
 
+	// Can you update this code to provide an estimate of the error associated with each fit parameter? 
+	// R. Sheehan 14 - 11 - 2019
+
 	// Generate data to use in the fit process
 	int npts, npars; 
 	long idum = (-911); 
@@ -1185,8 +1199,8 @@ void testing::non_lin_fit_test()
 	std::vector<double> dyda(npars, 0.0);
 
 	// data stored in array a in the form a[i] = amp_{k}, a[i+1] = centre_{k}, a[i+2] = width_{k}
-	a[0] = 5.0; a[1] = 2.0; a[2] = 3.0; 
-	a[3] = 3.0; a[4] = 5.0; a[5] = 1.0; 
+	a[0] = 5.0; a[1] = 2.0; a[2] = 3.0; // Gaussian 1
+	a[3] = 3.0; a[4] = 5.0; a[5] = 1.0; // Gaussian 2
 
 	spread = 0.01; 
 	xpos = xlow; 
@@ -1220,8 +1234,8 @@ void testing::non_lin_fit_test()
 	std::vector<int> ia(npars, 1); // tell the algorithm that you want to locate all parameters 
 
 	// Good guesses
-	/*a_guess[0] = 4.5; a_guess[1] = 2.2; a_guess[2] = 2.8;
-	a_guess[3] = 2.5; a_guess[4] = 4.3; a_guess[5] = 1.4;*/
+	a_guess[0] = 4.5; a_guess[1] = 2.2; a_guess[2] = 2.8;
+	a_guess[3] = 2.5; a_guess[4] = 4.3; a_guess[5] = 1.4;
 
 	// Bad guesses
 	/*a_guess[0] = 4.0; a_guess[1] = -2.2; a_guess[2] = 1.8;
@@ -1230,9 +1244,9 @@ void testing::non_lin_fit_test()
 	// Can you add something that tells the user that the fit is good or bad?
 	// How to interpret the chisq value correctly in terms of goodness of fit?
 
-	ia[0] = 0; ia[1] = 0; ia[2] = 0; 
-	a_guess[0] = 5.0; a_guess[1] = 2.0; a_guess[2] = 3.0; // these parameters are fixed
-	a_guess[3] = 2.0; a_guess[4] = 4.3; a_guess[5] = 1.4; // these are the guesses for the parameters being sought
+	//ia[0] = 0; ia[1] = 0; ia[2] = 0; 
+	//a_guess[0] = 5.0; a_guess[1] = 2.0; a_guess[2] = 3.0; // these parameters are fixed
+	//a_guess[3] = 2.0; a_guess[4] = 4.3; a_guess[5] = 1.4; // these are the guesses for the parameters being sought
 
 	/*ia[0] = 0; ia[3] = 0; 
 	a_guess[0] = 5.0; a_guess[3] = 3.0;*/
