@@ -292,13 +292,22 @@ void fit::non_lin_fit(std::vector<double> &x, std::vector<double> &y, std::vecto
 			double q = probability::gammq(0.5*nu, 0.5*(*chisq)); // goodness of fit
 
 			std::cout << "The computed fit parameters are:\n";
+			int count = 0; 
 			for (int i = 0; i < ma; i++) {
-				std::cout << "a[" << i << "] = " << a[i] << "\n";
+				if (ia[i]) {
+					std::cout << "a[" << i << "] = " << a[i] << " +/- " << sqrt(covar[count][count]) << "\n";
+					count++; 
+				}
+				else {
+					std::cout << "a[" << i << "] = " << a[i] << "\n";
+				}				
 			}
 			std::cout << "\nThe chi-sq value for the fit is " << *chisq << "\n"; 
 			std::cout << "nu for the fit is " << nu << "\n"; 
 			std::cout << "chi-sq / nu = "<<*chisq/nu<<"\n";
-			std::cout << "goodness of fit = " << q << "\n\n"; 
+			std::cout << "goodness of fit = " << q << "\n\n";
+			std::cout << "Covariance Matrix for the fit\n";
+			lin_alg::array_2d_print(covar);
 		}
 		else {
 			std::string reason = "Error: fit::mrqmin()\n";
@@ -373,25 +382,6 @@ void fit::mrqmin(std::vector<double> &x, std::vector<double> &y, std::vector<dou
 			std::vector<std::vector<double>> oneda;
 			std::vector<std::vector<double>> temp;
 
-			// Initialisation
-			/*if (*alamda < 0.0) {				
-				atry = std::vector<double>(ma, 0.0); 
-				beta = std::vector<double>(ma, 0.0);
-				da = std::vector<double>(ma, 0.0); 
-
-				for (mfit = 0, j = 0; j < ma; j++) if (ia[j]) mfit++;
-
-				oneda = lin_alg::array_2D(mfit, ncols);
-				
-				*alamda = 0.001;
-
-				mrqcof(x, y, sig, ndata, a, ia, ma, alpha, beta, chisq, funcs);
-				
-				ochisq = (*chisq);
-
-				for (j = 0; j < ma; j++) atry[j] = a[j];
-			}*/
-
 			atry = std::vector<double>(ma, 0.0);
 			beta = std::vector<double>(ma, 0.0);
 			da = std::vector<double>(ma, 0.0);
@@ -410,19 +400,6 @@ void fit::mrqmin(std::vector<double> &x, std::vector<double> &y, std::vector<dou
 			for (j = 0; j < ma; j++) atry[j] = a[j];
 			
 			// Alter linearised fit matrix along its diagonal elements
-			/*for (j = 0, l = 0; l < ma; l++) {
-				if (ia[l]) {
-					for (j++, k = 0, m = 0; m < ma; m++) {
-						if (ia[m]) {
-							k++;
-							covar[j][k] = alpha[j][k];
-						}
-					}
-					covar[j][j] = alpha[j][j] * (1.0 + (*alamda));
-					oneda[j][0] = beta[j];
-				}
-			}*/
-
 			for (j = 0; j < mfit; j++) {
 				for (k = 0; k < mfit; k++) covar[j][k] = alpha[j][k];
 				covar[j][j] = alpha[j][j] * (1.0 + (*alamda));
@@ -431,11 +408,12 @@ void fit::mrqmin(std::vector<double> &x, std::vector<double> &y, std::vector<dou
 			}
 
 			// solve the system of equations covar . x = oneda, store solution in oneda
+			// do calculation for covar using array temp
 			lin_alg::gaussj(temp, mfit, oneda, ncols);
 			
 			// update the vector da
 			for (j = 0; j < mfit; j++) {
-				for (k = 0; k < mfit; k++) covar[j][k] = temp[j][k];
+				for (k = 0; k < mfit; k++) covar[j][k] = temp[j][k]; // retrieve computed values for covar from temp
 				da[j] = oneda[j][0];
 			}
 			
@@ -452,7 +430,9 @@ void fit::mrqmin(std::vector<double> &x, std::vector<double> &y, std::vector<dou
 			// Examine whether or not the trial is successful
 			for (j = 0, l = 0; l < ma; l++)	if (ia[l]) atry[l] = a[l] + da[j++];
 
-			mrqcof(x, y, sig, ndata, atry, ia, ma, covar, da, chisq, funcs);
+			// mrqcof overwrites covar, so work with temp at this point instead of covar
+			// that way the correct values for covar are stored in covar
+			mrqcof(x, y, sig, ndata, atry, ia, ma, temp, da, chisq, funcs);
 
 			// If success, accept the new solution
 			if (*chisq < ochisq) {
@@ -460,19 +440,6 @@ void fit::mrqmin(std::vector<double> &x, std::vector<double> &y, std::vector<dou
 				*alamda *= 0.1;
 
 				ochisq = (*chisq);
-
-				/*for (j = 0, l = 0; l < ma; l++) {
-					if (ia[l]) {
-						for (j++, k = 0, m = 0; m < ma; m++) {
-							if (ia[m]) {
-								k++;
-								alpha[j][k] = covar[j][k];
-							}
-						}
-						beta[j] = da[j];
-						a[l] = atry[l];
-					}
-				}*/
 
 				for (j = 0; j < mfit; j++) {
 					for(k=0; k < mfit; k++) alpha[j][k] = covar[j][k];
@@ -534,10 +501,7 @@ void fit::mrqcof(std::vector<double> &x, std::vector<double> &y, std::vector<dou
 		bool c6 = (int)(a.size()) == ma ? true : false;
 		bool c7 = (int)(ia.size()) == ma ? true : false;
 		bool c8 = (int)(beta.size()) == ma ? true : false;
-		std::pair<int, int> sze = lin_alg::array_2D_size(alpha);
-		bool c9 = sze.first == ma ? true : false;
-		bool c10 = sze.second == ma ? true : false;
-		bool c11 = c1 && c2 && c3 && c4 && c5 && c6 && c7 && c8 && c9 && c10 ? true : false;
+		bool c11 = c1 && c2 && c3 && c4 && c5 && c6 && c7 && c8 ? true : false;
 
 		if (c11) {
 
@@ -561,7 +525,7 @@ void fit::mrqcof(std::vector<double> &x, std::vector<double> &y, std::vector<dou
 
 				(*funcs)(x[i], a, &ymod, dyda, ma);
 
-				sig2i = 1.0 / (sig[i] * sig[i]);
+				sig2i = 1.0 / ( template_funcs::DSQR(sig[i]) );
 
 				dy = y[i] - ymod;
 
@@ -574,7 +538,7 @@ void fit::mrqcof(std::vector<double> &x, std::vector<double> &y, std::vector<dou
 					}
 				}
 
-				*chisq += dy * dy*sig2i; // find chi^{2}
+				*chisq += template_funcs::DSQR(dy)*sig2i; // find chi^{2}
 			}
 
 			// fill the symmetric side
@@ -593,7 +557,6 @@ void fit::mrqcof(std::vector<double> &x, std::vector<double> &y, std::vector<dou
 			if (!c6) reason += "a does not have correct size a.size() = " + template_funcs::toString(a.size()) + "\n";
 			if (!c7) reason += "ia does not have correct size ia.size() = " + template_funcs::toString(ia.size()) + "\n";
 			if (!c8) reason += "beta does not have correct size beta.size() = " + template_funcs::toString(beta.size()) + "\n";
-			if (!c9 || !c10) reason += "alpha does not have correct size alpha.size() = ( " + template_funcs::toString(sze.first) + " , " + template_funcs::toString(sze.second) + " )\n";
 
 			throw std::invalid_argument(reason);
 		}

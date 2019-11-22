@@ -1222,7 +1222,7 @@ void testing::non_lin_fit_test()
 	// Perform the best it search for the data set
 	int ITMAX = 10; 
 
-	double TOL = 0.01; 
+	double TOL = 0.001; 
 	double chisq = 0.0; 
 
 	// Declare the necessary arrays
@@ -1244,16 +1244,29 @@ void testing::non_lin_fit_test()
 	// Can you add something that tells the user that the fit is good or bad?
 	// How to interpret the chisq value correctly in terms of goodness of fit?
 
+	// Find three parameters
 	//ia[0] = 0; ia[1] = 0; ia[2] = 0; 
 	//a_guess[0] = 5.0; a_guess[1] = 2.0; a_guess[2] = 3.0; // these parameters are fixed
-	//a_guess[3] = 2.0; a_guess[4] = 4.3; a_guess[5] = 1.4; // these are the guesses for the parameters being sought
+	//ia[3] = 1; ia[4] = 1; ia[5] = 1;
+	//a_guess[3] = 2.5; a_guess[4] = 4.3; a_guess[5] = 1.4; // these are the guesses for the parameters being sought
 
-	/*ia[0] = 0; ia[3] = 0; 
-	a_guess[0] = 5.0; a_guess[3] = 3.0;*/
+	// Find three parameters
+	//ia[0] = 0; ia[1] = 1; ia[2] = 1;
+	//a_guess[0] = 5.0; a_guess[1] = 1.4; a_guess[2] = 3.2; // these parameters are fixed
+	//ia[3] = 1; ia[4] = 0; ia[5] = 1;
+	//a_guess[3] = 2.5; a_guess[4] = 5.0; a_guess[5] = 1.4; // these are the guesses for the parameters being sought
 
-	// Need to be fitting a minimum of two parameters
-	/*ia[4] = 0; 
-	a_guess[4] = 4.0;*/ 
+	// Find two parameters
+	/*ia[0] = 1; ia[1] = 0; ia[2] = 0;
+	a_guess[0] = 4.0; a_guess[1] = 2.0; a_guess[2] = 3.0; 
+	ia[3] = 1; ia[4] = 0; ia[5] = 0;
+	a_guess[3] = 2.5; a_guess[4] = 5.0; a_guess[5] = 1.0; */
+
+	// Find one parameters
+	/*ia[0] = 0; ia[1] = 1; ia[2] = 0;
+	a_guess[0] = 5.0; a_guess[1] = 1.5; a_guess[2] = 3.0;
+	ia[3] = 0; ia[4] = 0; ia[5] = 0;
+	a_guess[3] = 3.0; a_guess[4] = 5.0; a_guess[5] = 1.0;*/
 
 	fit::non_lin_fit(xdata, ydata, sigdata, npts, a_guess, ia, npars, covar, alpha, &chisq, fgauss, ITMAX, TOL); 
 
