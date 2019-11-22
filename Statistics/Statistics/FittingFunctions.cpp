@@ -239,6 +239,9 @@ void fit::non_lin_fit(std::vector<double> &x, std::vector<double> &y, std::vecto
 	// Levenberg-Marquardt method, attempting to reduce the value chi^{2} of a fit between a set of data points x[0..na-1], y[na-1]
 	// with individual standard deviations sig[0..na-1] and a nonlinear function dependent on ma coefficients a[0..ma-1]
 	// R. Sheehan 13 - 7 - 2018
+	// Fixed the covariance matrix error and the error which meant that single-parameter fits could not be performed. 
+	// Feeling pleased
+	// R. Sheehan 22 - 11 - 2019
 
 	try {
 		bool c1 = ndata > 3 ? true : false;
@@ -306,8 +309,6 @@ void fit::non_lin_fit(std::vector<double> &x, std::vector<double> &y, std::vecto
 			std::cout << "nu for the fit is " << nu << "\n"; 
 			std::cout << "chi-sq / nu = "<<*chisq/nu<<"\n";
 			std::cout << "goodness of fit = " << q << "\n\n";
-			std::cout << "Covariance Matrix for the fit\n";
-			lin_alg::array_2d_print(covar);
 		}
 		else {
 			std::string reason = "Error: fit::mrqmin()\n";
