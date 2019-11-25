@@ -291,9 +291,6 @@ void fit::non_lin_fit(std::vector<double> &x, std::vector<double> &y, std::vecto
 			alamda = 0.0; 
 			mrqmin(x, y, sig, ndata, a, ia, ma, covar, alpha, chisq, funcs, &alamda);
 
-			double nu = ndata - ma; 
-			double q = probability::gammq(0.5*nu, 0.5*(*chisq)); // goodness of fit
-
 			std::cout << "The computed fit parameters are:\n";
 			int count = 0; 
 			for (int i = 0; i < ma; i++) {
@@ -305,6 +302,8 @@ void fit::non_lin_fit(std::vector<double> &x, std::vector<double> &y, std::vecto
 					std::cout << "a[" << i << "] = " << a[i] << "\n";
 				}				
 			}
+			double nu = ndata - count; // nu must be computed on basis of number of fitted parameters
+			double q = probability::gammq(0.5*nu, 0.5*(*chisq)); // goodness of fit
 			std::cout << "\nThe chi-sq value for the fit is " << *chisq << "\n"; 
 			std::cout << "nu for the fit is " << nu << "\n"; 
 			std::cout << "chi-sq / nu = "<<*chisq/nu<<"\n";

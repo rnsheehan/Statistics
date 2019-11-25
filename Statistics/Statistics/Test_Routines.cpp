@@ -1183,10 +1183,10 @@ void testing::non_lin_fit_test()
 
 	// Generate data to use in the fit process
 	int npts, npars; 
-	long idum = (-911); 
+	long idum = (-1011); 
 	double spread, xlow, xhigh, deltax, xpos, yval;
 
-	xlow = 0.0; xhigh = 10.0; deltax = 0.1; 
+	xlow = 0.0; xhigh = 10.0; deltax = 0.02; 
 	npts = (int)( 1.0 + ( (xhigh - xlow) / deltax) ); 
 
 	std::vector<double> xdata(npts, 0.0); 
@@ -1234,8 +1234,8 @@ void testing::non_lin_fit_test()
 	std::vector<int> ia(npars, 1); // tell the algorithm that you want to locate all parameters 
 
 	// Good guesses
-	/*a_guess[0] = 4.5; a_guess[1] = 2.2; a_guess[2] = 2.8;
-	a_guess[3] = 2.5; a_guess[4] = 4.3; a_guess[5] = 1.4;*/
+	a_guess[0] = 4.5; a_guess[1] = 2.2; a_guess[2] = 2.8;
+	a_guess[3] = 2.5; a_guess[4] = 4.3; a_guess[5] = 1.4;
 
 	// Bad guesses
 	/*a_guess[0] = 4.0; a_guess[1] = -2.2; a_guess[2] = 1.8;
@@ -1250,17 +1250,17 @@ void testing::non_lin_fit_test()
 	//ia[3] = 1; ia[4] = 1; ia[5] = 1;
 	//a_guess[3] = 2.5; a_guess[4] = 4.3; a_guess[5] = 1.4; // these are the guesses for the parameters being sought
 
-	// Find three parameters
-	ia[0] = 0; ia[1] = 1; ia[2] = 1;
-	a_guess[0] = 5.0; a_guess[1] = 1.4; a_guess[2] = 3.2; // these parameters are fixed
-	ia[3] = 1; ia[4] = 0; ia[5] = 1;
-	a_guess[3] = 2.5; a_guess[4] = 5.0; a_guess[5] = 1.4; // these are the guesses for the parameters being sought
+	// Find four parameters
+	//ia[0] = 0; ia[1] = 1; ia[2] = 1;
+	//a_guess[0] = 5.0; a_guess[1] = 1.4; a_guess[2] = 3.2; // these parameters are fixed
+	//ia[3] = 1; ia[4] = 0; ia[5] = 1;
+	//a_guess[3] = 2.5; a_guess[4] = 5.0; a_guess[5] = 1.4; // these are the guesses for the parameters being sought
 
 	// Find two parameters
 	/*ia[0] = 1; ia[1] = 0; ia[2] = 0;
 	a_guess[0] = 4.0; a_guess[1] = 2.0; a_guess[2] = 3.0; 
 	ia[3] = 1; ia[4] = 0; ia[5] = 0;
-	a_guess[3] = 2.5; a_guess[4] = 5.0; a_guess[5] = 1.0; */
+	a_guess[3] = 2.5; a_guess[4] = 5.0; a_guess[5] = 1.0;*/ 
 
 	// Find one parameters
 	/*ia[0] = 0; ia[1] = 1; ia[2] = 0;
