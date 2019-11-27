@@ -234,7 +234,7 @@ void fit::lfit(std::vector<double> &x, std::vector<double> &y, std::vector<doubl
 	}
 }
 
-void fit::non_lin_fit(std::vector<double> &x, std::vector<double> &y, std::vector<double> &sig, int &ndata, std::vector<double> &a, std::vector<int> &ia, int &ma, std::vector<std::vector<double>> &covar, std::vector<std::vector<double>> &alpha, double *chisq, void(*funcs)(double, std::vector<double> &, double *, std::vector<double> &, int &), int &itmax, double &toler)
+void fit::non_lin_fit(std::vector<double> &x, std::vector<double> &y, std::vector<double> &sig, int &ndata, std::vector<double> &a, std::vector<int> &ia, int &ma, std::vector<std::vector<double>> &covar, std::vector<std::vector<double>> &alpha, double *chisq, void(*funcs)(double, std::vector<double> &, double *, std::vector<double> &, int &), int &itmax, double &toler, bool loud)
 {
 	// Levenberg-Marquardt method, attempting to reduce the value chi^{2} of a fit between a set of data points x[0..na-1], y[na-1]
 	// with individual standard deviations sig[0..na-1] and a nonlinear function dependent on ma coefficients a[0..ma-1]
@@ -276,7 +276,7 @@ void fit::non_lin_fit(std::vector<double> &x, std::vector<double> &y, std::vecto
 				// check for convergence
 				if (fabs(*chisq - ochisq) < toler) { 
 					
-					std::cout << "Iterations converged to within tolerance after " << itnum << " steps\n"; 
+					if(loud) std::cout << "Iterations converged to within tolerance after " << itnum << " steps\n"; 
 
 					break;
 				}
@@ -291,23 +291,25 @@ void fit::non_lin_fit(std::vector<double> &x, std::vector<double> &y, std::vecto
 			alamda = 0.0; 
 			mrqmin(x, y, sig, ndata, a, ia, ma, covar, alpha, chisq, funcs, &alamda);
 
-			std::cout << "The computed fit parameters are:\n";
-			int count = 0; 
-			for (int i = 0; i < ma; i++) {
-				if (ia[i]) {
-					std::cout << "a[" << i << "] = " << a[i] << " +/- " << sqrt(covar[count][count]) << "\n";
-					count++; 
+			if (loud) {
+				std::cout << "The computed fit parameters are:\n";
+				int count = 0;
+				for (int i = 0; i < ma; i++) {
+					if (ia[i]) {
+						std::cout << "a[" << i << "] = " << a[i] << " +/- " << sqrt(covar[count][count]) << "\n";
+						count++;
+					}
+					else {
+						std::cout << "a[" << i << "] = " << a[i] << "\n";
+					}
 				}
-				else {
-					std::cout << "a[" << i << "] = " << a[i] << "\n";
-				}				
+				double nu = ndata - count; // nu must be computed on basis of number of fitted parameters
+				double q = probability::gammq(0.5*nu, 0.5*(*chisq)); // goodness of fit
+				std::cout << "\nThe chi-sq value for the fit is " << *chisq << "\n";
+				std::cout << "nu for the fit is " << nu << "\n";
+				std::cout << "chi-sq / nu = " << *chisq / nu << "\n";
+				std::cout << "goodness of fit = " << q << "\n\n";
 			}
-			double nu = ndata - count; // nu must be computed on basis of number of fitted parameters
-			double q = probability::gammq(0.5*nu, 0.5*(*chisq)); // goodness of fit
-			std::cout << "\nThe chi-sq value for the fit is " << *chisq << "\n"; 
-			std::cout << "nu for the fit is " << nu << "\n"; 
-			std::cout << "chi-sq / nu = "<<*chisq/nu<<"\n";
-			std::cout << "goodness of fit = " << q << "\n\n";
 		}
 		else {
 			std::string reason = "Error: fit::mrqmin()\n";
@@ -573,4 +575,57 @@ void fit::goodness_of_fit()
 	// chi^{2} / nu ~ 1
 	// q = gammq(nu/2, chi^{2}/2) >= 0.1
 	// R^{2} ~ 1
+}
+
+void fit::random_sample(std::vector<double> &x, std::vector<double> &y, std::vector<double> &sig, int &ndata, std::vector<double> &xs, std::vector<double> &ys, std::vector<double> &sigs, int &ns)
+{
+	// generate a randomly sampled data set from an existing data set
+	// this is equivalent to "draw with replacement" from the original data
+	// store the sampled values in xs, ys, sigs
+	// R. Sheehan 25 - 11 - 2019
+
+	try {
+		bool c1 = ndata > 3 ? true : false;
+		bool c2 = (int)(x.size()) == ndata ? true : false;
+		bool c3 = (int)(y.size()) == ndata ? true : false;
+		bool c4 = (int)(sig.size()) == ndata ? true : false;
+		bool c5 = ns > 3 ? true : false;
+		bool c6 = (int)(xs.size()) == ns ? true : false;
+		bool c7 = (int)(ys.size()) == ns ? true : false;
+		bool c8 = (int)(sigs.size()) == ns ? true : false;
+		bool c9 = c1 && c2 && c3 && c4 && c5 && c6 && c7 && c8;
+
+		if (c9) {
+			// Use current time information to generate seed value for rng
+			time_t rawtime;
+
+			time(&rawtime);
+
+			int min = 0, max = ns - 1; 
+			long idum = (-static_cast<long>(rawtime));
+
+			for (int i = 0; i < ns; i++) {
+				int rindx = rng::ranint(&idum, min, max); // randomly sampled value
+				xs[i] = x[rindx]; 
+				ys[i] = y[rindx]; 
+				sigs[i] = sig[rindx]; 
+			}
+		}
+		else{
+			std::string reason = "Error: fit::random_sample()\n";
+			if (!c1) reason += "No. data points is not correct ndata = " + template_funcs::toString(ndata) + "\n";
+			if (!c2) reason += "x does not have correct size x.size() = " + template_funcs::toString(x.size()) + "\n";
+			if (!c3) reason += "y does not have correct size y.size() = " + template_funcs::toString(y.size()) + "\n";
+			if (!c4) reason += "sig does not have correct size sig.size() = " + template_funcs::toString(sig.size()) + "\n";
+			if (!c5) reason += "No. data points is not correct ns = " + template_funcs::toString(ns) + "\n";
+			if (!c6) reason += "xs does not have correct size xs.size() = " + template_funcs::toString(xs.size()) + "\n";
+			if (!c7) reason += "ys does not have correct size ys.size() = " + template_funcs::toString(ys.size()) + "\n";
+			if (!c8) reason += "sigs does not have correct size sigs.size() = " + template_funcs::toString(sigs.size()) + "\n";
+
+			throw std::invalid_argument(reason);
+		}
+	}
+	catch (std::invalid_argument &e) {
+		std::cerr << e.what();
+	}
 }
