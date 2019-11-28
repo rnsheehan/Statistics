@@ -88,9 +88,9 @@ int main()
 
 	//testing::non_lin_fit_test();
 
-	//testing::rng_test(); 
+	testing::rng_test(); 
 
-	testing::monte_carlo_test(); 
+	//testing::monte_carlo_test(); 
 	
 	std::cout<<"Press enter to close console\n";
 	std::cin.get(); 
