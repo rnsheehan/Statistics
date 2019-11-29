@@ -1290,7 +1290,7 @@ void testing::rng_test()
 
 	min = 7; max = 27; diff = max - min; // use these values to scale the RN to a certain range of integers
 
-	long idum = (-static_cast<long>(rawtime));
+	long idum = rng::ranseed();
 	// generate pairs of random numbers using the different rng
 	for (int i = 0; i < 10; i++) {
 		double RN = rng::ran1(&idum); 
