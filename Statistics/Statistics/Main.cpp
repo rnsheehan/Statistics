@@ -76,7 +76,7 @@ int main()
 
 	//testing::rank_order_test(); 
 
-	//testing::kendall_test_1(); 
+	testing::kendall_test_1(); 
 
 	//testing::kendall_test_2();
 
@@ -88,7 +88,7 @@ int main()
 
 	//testing::non_lin_fit_test();
 
-	testing::rng_test(); 
+	//testing::rng_test(); 
 
 	//testing::monte_carlo_test(); 
 	
