@@ -1,0 +1,873 @@
+#ifndef ATTACH_H
+#include "Attach.h"
+#endif
+
+// Declaration of a namespace that contains functions used to perform statistical tests on data sets
+// R. Sheehan 5 - 9 - 2017
+
+void statistic::avevar(std::vector<double> &data, int &n, double *ave, double *var)
+{
+	// Compute the average and variance of values contained in data
+	// data has index starting from zero
+	// computed average is stored in ave
+	// computed variance is stored in var
+
+	try{
+		if(n>2){
+			int j;
+			double s,ep;
+
+			for (*ave=0.0,j=0 ; j < n; j++) *ave += data[j];
+			*ave /= n;
+			*var=ep=0.0;
+			for (j = 0; j < n; j++) {
+				s=data[j]-(*ave);
+				ep += s;
+				*var += s*s;
+			}
+			*var=(*var-ep*ep/n)/(n-1);
+		}
+		else{
+			std::string reason; 
+			reason = "Error: statistic::avevar()\n"; 
+			reason += "n = " + template_funcs::toString(n) + "\n"; 
+			throw std::invalid_argument(reason); 
+		}
+	}
+	catch(std::invalid_argument &e){
+		std::cerr<<e.what(); 
+	}
+}
+
+void statistic::moment(std::vector<double> &data, int &n, double *ave, double *adev, double *sdev, double *var, double *skew, double *curt)
+{
+	// Compute the moments of the values in data
+	// data has index starting from zero
+	// computed average is stored in ave
+	// computed absolute deviation is stored in adev
+	// computed variance is stored in var
+	// computed standard deviation is stored in sdev
+	// computed skew is stored in skew
+	// computed kurtosis is stored in kurt
+
+	try{
+		if(n>2){
+			int j;
+			double ep=0.0,s,p;
+			s=0.0;
+			for (j=0;j<n;j++) s += data[j];
+			*ave=s/n;
+			*adev=(*var)=(*skew)=(*curt)=0.0;
+			for (j=0;j<n;j++) {
+				*adev += fabs(s=data[j]-(*ave));
+				*var += (p=s*s);
+				*skew += (p *= s);
+				*curt += (p *= s);
+			}
+			*adev /= n;
+			*var=(*var-ep*ep/n)/(n-1);
+			*sdev=sqrt(*var);
+			if (*var) {
+				*skew /= (n*(*var)*(*sdev));
+				*curt=(*curt)/(n*(*var)*(*var))-3.0;
+			} 
+			else{
+				std::cerr<<"No skew/kurtosis when variance = 0 (in moment)\n";
+			}
+		}
+		else{
+			std::string reason; 
+			reason = "Error: statistic::moment()\n"; 
+			reason += "n = " + template_funcs::toString(n) + "\n"; 
+			throw std::invalid_argument(reason); 
+		}
+	}
+	catch(std::invalid_argument &e){
+		std::cerr<<e.what(); 
+	}
+}
+
+void statistic::ttest(std::vector<double> &data1, int &n1, std::vector<double> &data2, int &n2, double *t, double *prob)
+{
+	// Student's t test to determine if two distributions have significantly different means
+	// It is assumed that the data are drawn from distributions with the same variance
+
+	// Given the data in data1 and data2 compute the Student's t-statistic as t and its significance as prob
+	// Small values of prob (<0.05) indicate that arrays have significantly different means
+
+	try{
+	
+		if(n1 > 2 && n2 > 2){
+			double var1,var2,svar,df,ave1,ave2;
+
+			avevar(data1,n1,&ave1,&var1);
+			
+			avevar(data2,n2,&ave2,&var2);
+			
+			df=n1+n2-2;
+			
+			svar=((n1-1)*var1+(n2-1)*var2)/df;
+			
+			*t=(ave1-ave2)/sqrt(svar*(1.0/n1+1.0/n2));
+			
+			*prob=probability::betai(0.5*df,0.5,df/(df+(*t)*(*t)));	
+		}
+		else{
+			std::string reason; 
+			reason = "Error: statistic::ttest()\n"; 
+			reason += "n1 = " + template_funcs::toString(n1) + "\n"; 
+			reason += "n2 = " + template_funcs::toString(n2) + "\n"; 
+			throw std::invalid_argument(reason); 
+		}
+	}
+	catch(std::invalid_argument &e){
+		std::cerr<<e.what(); 
+	}
+}
+
+void statistic::tutest(std::vector<double> &data1, int &n1, std::vector<double> &data2, int &n2, double *t, double *prob)
+{
+	// Student's t test to determine if two distributions have significantly different means
+	// This test allows for the possibility that the data may have difference variances
+
+	// To determine if two data sets have significantly difference variances you must apply the F-test
+
+	// Given the data in data1 and data2 compute the Student's t-statistic as t and its significance as prob
+	// Small values of prob (<0.05) indicate that arrays have significantly different means
+
+	try{
+	
+		if(n1 > 2 && n2 > 2){
+			double var1,var2,df,ave1,ave2;
+
+			avevar(data1,n1,&ave1,&var1);
+
+			avevar(data2,n2,&ave2,&var2);
+			
+			*t=(ave1-ave2)/sqrt(var1/n1+var2/n2);
+			
+			df=template_funcs::DSQR(var1/n1+var2/n2)/(template_funcs::DSQR(var1/n1)/(n1-1)+template_funcs::DSQR(var2/n2)/(n2-1));
+			
+			*prob=probability::betai(0.5*df,0.5,df/(df+template_funcs::DSQR(*t)));			
+		}
+		else{
+			std::string reason; 
+			reason = "Error: statistic::tuest()\n"; 
+			reason += "n1 = " + template_funcs::toString(n1) + "\n"; 
+			reason += "n2 = " + template_funcs::toString(n2) + "\n"; 
+			throw std::invalid_argument(reason); 
+		}
+	}
+	catch(std::invalid_argument &e){
+		std::cerr<<e.what(); 
+	}
+}
+
+void statistic::tptest(std::vector<double> &data1, std::vector<double> &data2, int &n, double *t, double *prob)
+{
+	// Student's t test to determine if two paired arrays have significantly different means
+
+	// Given the paired arrays data1 and data2 compute the Student's t-statistic as t and its significance as prob
+	// Small values of prob (<0.05) indicate that arrays have significantly different means
+
+	try{	
+		if(n > 2){
+			int j; 
+			
+			double var1,var2,ave1,ave2,sd,df,cov=0.0;
+
+			avevar(data1,n,&ave1,&var1);
+			
+			avevar(data2,n,&ave2,&var2);
+			
+			for (j=1;j<=n;j++)
+				cov += (data1[j]-ave1)*(data2[j]-ave2);
+			
+			cov /= df=n-1;
+			
+			sd=sqrt((var1+var2-2.0*cov)/n);
+			
+			*t=(ave1-ave2)/sd;
+			
+			*prob=probability::betai(0.5*df,0.5,df/(df+(*t)*(*t)));			
+		}
+		else{
+			std::string reason; 
+			reason = "Error: statistic::tpest()\n"; 
+			reason += "n1 = " + template_funcs::toString(n) + "\n"; 
+			throw std::invalid_argument(reason); 
+		}
+	}
+	catch(std::invalid_argument &e){
+		std::cerr<<e.what(); 
+	}
+}
+
+void statistic::ftest(std::vector<double> &data1, int &n1, std::vector<double> &data2, int &n2, double *f, double *prob)
+{
+	// F-test to determine if two distributions have significantly different variances
+	
+	// Given the data in data1 and data2 compute the F-statistic as f and its significance as prob
+	// Small values of prob (<0.05) indicate that arrays have significantly different variances
+
+	// The F-test tests the hypothesis that two samples have different variances by
+	// trying to reject the null hypothesis that their variances are actually consistent
+
+	try{
+	
+		if(n1 > 2 && n2 > 2){
+			double var1,var2,ave1,ave2,df1,df2;
+
+			avevar(data1,n1,&ave1,&var1);
+			avevar(data2,n2,&ave2,&var2);
+			if (var1 > var2) {
+				*f=var1/var2;
+				df1=n1-1;
+				df2=n2-1;
+			} else {
+				*f=var2/var1;
+				df1=n2-1;
+				df2=n1-1;
+			}
+			*prob = 2.0*probability::betai(0.5*df2,0.5*df1,df2/(df2+df1*(*f)));
+			if (*prob > 1.0) *prob=2.0-*prob;
+		}
+		else{
+			std::string reason; 
+			reason = "Error: statistic::ftest()\n"; 
+			reason += "n1 = " + template_funcs::toString(n1) + "\n"; 
+			reason += "n2 = " + template_funcs::toString(n2) + "\n"; 
+			throw std::invalid_argument(reason); 
+		}
+	}
+	catch(std::invalid_argument &e){
+		std::cerr<<e.what(); 
+	}
+}
+
+void statistic::chsone(std::vector<double> &bins, std::vector<double> &ebins, int &nbins, int &knstrn, double *df, double *chsq, double *prob)
+{
+	// Given the array bins[0..nbins-1] containing the observed numbers of events, and an array
+	// ebins[0..nbins-1] containing the expected numbers of events, and given the number of constraints
+	// knstrn (normally one), this routine returns (trivially) the number of degrees of freedom
+	// df, and (nontrivially) the chi-square chsq and the significance prob. 
+	
+	// A small value of prob indicates a significant difference between the distributions bins and ebins.
+
+	// null hypothesis is that two data sets are drawn from the same population distribution function
+
+	// the data from ebins comes from a known probability distribution
+	// the aim of chsone is to determine if the data in bins comes from the same distribution as ebins
+	
+	// this procedure compares the number of counts in bins, at least that's what I think anyway
+
+	// Note that bins and ebins are both float arrays, although bins will normally contain integer values.
+
+	try{
+
+		int j;
+		double temp;
+
+		*df=nbins-knstrn;
+		*chsq=0.0;
+		for (j=0;j<nbins;j++) {
+			if (ebins[j] <= 0.0){
+				std::string reason; 
+				reason = "Error: void chsone(std::vector<double> &bins, std::vector<double> &ebins, int &nbins, int &knstrn, double *df, double *chsq, double *prob)\n"; 
+				reason += "Bad expected number in chsone\n";
+				throw std::invalid_argument(reason); 
+			}
+			temp=bins[j]-ebins[j];
+			*chsq += temp*temp/ebins[j];
+		}
+		*prob=probability::gammq(0.5*(*df),0.5*(*chsq));
+	}
+	catch(std::invalid_argument &e){
+		std::cerr<<e.what(); 		
+	}
+}
+
+void statistic::chstwo(std::vector<double> &bins1, std::vector<double> &bins2, int &nbins, int &knstrn, double *df, double *chsq, double *prob)
+{
+	
+	// Given the arrays bins1[1..nbins] and bins2[1..nbins], containing two sets of binned
+	// data, and given the number of constraints knstrn (normally 1 or 0), this routine returns the
+	// number of degrees of freedom df, the chi-square chsq, and the significance prob. 
+
+	// the data from bins1 and bins2 come from an unknown probability distribution
+	// the aim of chstwo is to determine if the data in bins1 and bins2 come from the same distribution
+
+	// null hypothesis is that two data sets are drawn from the same population distribution function
+
+	// this procedure compares the number of counts in bins, at least that's what I think anyway
+	
+	// A small value of prob indicates a significant difference between the distributions bins1 and bins2. 
+	
+	// Note that bins1 and bins2 are both float arrays, although they will normally contain integer values.
+
+	try{
+
+		int j;
+		double temp;
+
+		*df=nbins-knstrn;
+		*chsq=0.0;
+		for (j=0;j<nbins;j++){
+			if (bins1[j] == 0.0 && bins2[j] == 0.0){
+				--(*df);
+
+				std::string reason; 
+				reason = "Error: void chstwo(std::vector<double> &bins1, std::vector<double> &bins2, int &nbins, int &knstrn, double *df, double *chsq, double *prob)\n"; 
+				reason += "bins1[j] == 0.0 && bins2[j] == 0.0: j = " + template_funcs::toString(j) + "\n";
+				throw std::invalid_argument(reason); 
+			}
+			else {
+				temp=bins1[j]-bins2[j];
+				*chsq += temp*temp/(bins1[j]+bins2[j]);
+			}
+		}
+		*prob=probability::gammq(0.5*(*df),0.5*(*chsq));
+	}
+	catch(std::invalid_argument &e){
+		std::cerr<<e.what();
+	}
+}
+
+void statistic::chsthree(std::vector<double> &bins1, std::vector<double> &bins2, int &nbins1, int &nbins2, int &knstrn, double *df, double *chsq, double *prob)
+{
+	// Given the arrays bins1[1..nbins] and bins2[1..nbins], containing two sets of binned
+	// data, and given the number of constraints knstrn (normally 1 or 0), this routine returns the
+	// number of degrees of freedom df, the chi-square chsq, and the significance prob. 
+	
+	// A small value of prob indicates a significant difference between the distributions bins1 and bins2.
+
+	// the data from bins1 and bins2 come from an unknown probability distribution
+	// the aim of chsthree is to determine if the data in bins1 and bins2 come from the same distribution
+
+	// null hypothesis is that two data sets are drawn from the same population distribution function
+
+	// this procedure compares the number of counts in bins, at least that's what I think anyway
+	
+	// Note that bins1 and bins2 are both float arrays, although they will normally contain integer values.
+
+	try{
+		int j;
+		double R, S;
+		
+		// sum over the data in each bin
+		R = 0.0; 
+		for(j = 0; j < nbins1; j++) R += bins1[j]; 
+
+		S = 0.0; 
+		for(j = 0; j < nbins2; j++) S += bins2[j];
+
+		if(fabs(R) > 0.0 && fabs(S) > 0.0){
+
+			int nbins; 
+			double v1, v2, temp; 
+
+			v1 = sqrt(S/R); v2 = sqrt(R/S); 
+
+			// compute the chi-square statistic
+			nbins = std::min(nbins1, nbins2); 
+			*df=nbins-knstrn;
+			*chsq=0.0;
+			for (j=0;j<nbins;j++){
+				if (bins1[j] == 0.0 && bins2[j] == 0.0){
+					--(*df);
+
+					std::string reason; 
+					reason = "Error: void chsthree(std::vector<double> &bins1, std::vector<double> &bins2, int &nbins1, int &nbins2, int &knstrn, double *df, double *chsq, double *prob)\n"; 
+					reason += "bins1[j] == 0.0 && bins2[j] == 0.0: j = " + template_funcs::toString(j) + "\n";
+					throw std::invalid_argument(reason); 
+				}
+				else {
+					temp=(v1*bins1[j])-(v2*bins2[j]);
+					*chsq += temp*temp/(bins1[j]+bins2[j]);
+				}
+			}
+			*prob=probability::gammq( 0.5*(*df), 0.5*(*chsq) );
+
+		}
+		else{
+			std::string reason; 
+			reason = "Error: void chsthree(std::vector<double> &bins1, std::vector<double> &bins2, int &nbins1, int &nbins2, int &knstrn, double *df, double *chsq, double *prob)\n"; 
+			reason += "R == 0.0 && S == 0.0\n";
+			throw std::invalid_argument(reason); 
+		}
+	}
+	catch(std::invalid_argument &e){
+		std::cerr<<e.what();
+	}
+}
+
+void statistic::ksone(std::vector<double> &data, int &n, double (*func)(double), double *d, double *prob)
+{
+	// Given an array data[0..n-1], and given a user-supplied function of a single variable func which
+	// is a cumulative distribution function ranging from 0 (for smallest values of its argument) to 1
+	// (for largest values of its argument), this routine returns the K–S statistic d, and the significance
+	// level prob. Small values of prob show that the cumulative distribution function of data is
+	// significantly different from func. 
+	// The array data is modified by being sorted into ascending order.
+
+	// null hypothesis is that two data sets are drawn from the same population distribution function
+
+	try{
+
+		if(n > 3.0){
+			int j;
+			double dt,en,ff,fn,fo=0.0;
+
+			std::sort(data.begin(), data.end()); // sort the data set using std::sort from <algorithm>
+			en=n;
+			*d=0.0;
+			for (j=0;j<n;j++) {
+				fn=j/en;
+				ff=(*func)(data[j]);
+				dt=std::max( fabs(fo-ff), fabs(fn-ff) );
+				if (dt > *d) *d=dt;
+				fo=fn;
+			}
+			en=sqrt(en);
+			*prob=probability::probks( (en+0.12+0.11/en)*(*d) );
+		}
+		else{
+			std::string reason; 
+			reason = "Error: void statistic::ksone(std::vector<double> &data, int &n, double (*func)(double), double *d, double *prob)\n"; 
+			reason += "Input array dimensions are not correct\n"; 
+			throw std::invalid_argument(reason); 
+		}
+	}
+	catch(std::invalid_argument &e){
+		std::cerr<<e.what();
+	}
+}
+
+void statistic::kstwo(std::vector<double> &data1, int &n1, std::vector<double> &data2, int &n2, double *d, double *prob)
+{
+	// Given an array data1[0..n1-1], and an array data2[0..n2-1], this routine returns the K–
+	// S statistic d, and the significance level prob for the null hypothesis that the data sets are
+	// drawn from the same distribution. Small values of prob show that the cumulative distribution
+	// function of data1 is significantly different from that of data2. The arrays data1 and data2
+	// are modified by being sorted into ascending order.
+
+	// null hypothesis is that two data sets are drawn from the same population distribution function
+
+	try{
+
+		if(n1 > 3.0 && n2 > 3.0){
+			int j1=0,j2=0;
+			double d1,d2,dt,en1,en2,en,fn1=0.0,fn2=0.0;
+
+			std::sort(data1.begin(), data1.end());
+			std::sort(data2.begin(), data2.end());
+			en1=n1;
+			en2=n2;
+			*d=0.0;
+			while (j1 < n1 && j2 < n2) {
+				if ((d1=data1[j1]) <= (d2=data2[j2])) fn1=j1++/en1;
+				if (d2 <= d1) fn2=j2++/en2;
+				if ((dt=fabs(fn2-fn1)) > *d) *d=dt;
+			}
+			en=sqrt(en1*en2/(en1+en2));
+			*prob=probability::probks((en+0.12+0.11/en)*(*d));
+		}
+		else{
+			std::string reason; 
+			reason = "Error: void statistic::kstwo(std::vector<double> &data1, int &n1, std::vector<double> &data2, int &n2, double *d, double *prob)\n"; 
+			reason += "Input array dimensions are not correct\n"; 
+			throw std::invalid_argument(reason); 
+		}
+	}
+	catch(std::invalid_argument &e){
+		std::cerr<<e.what();
+	}
+}
+
+void statistic::cntab1(std::vector<std::vector<int>> &nn, int &ni, int &nj, double *chisq, double *df, double *prob, double *cramrv, double *ccc)
+{
+	// Given a two-dimensional contingency table in the form of an integer array nn[0..ni-1][0..nj-1],
+	// this routine returns the chi-square chisq, the number of degrees of freedom df, the significance
+	// level prob (small values indicating a significant association), and two measures of association,
+	// Cramer’s V (cramrv) and the contingency coefficient C (ccc).
+
+	// null hypothesis is that the two variables x and y have no association
+
+	try{
+		if(ni>0 && nj > 0){		
+			int nnj,nni,j,i,minij;
+
+			double sum=0.0, TINY = 1.0e-30, expctd, temp;
+
+			std::vector<double> sumi(ni, 0.0);
+			std::vector<double> sumj(nj, 0.0);
+
+			nni=ni;
+			nnj=nj;
+			for (i=0;i<ni;i++) {
+				sumi[i]=0.0;
+				for (j=0;j<nj;j++) {
+					sumi[i] += nn[i][j];
+					sum += nn[i][j];
+				}
+				if (sumi[i] == 0.0) --nni;
+			}
+			for (j=0;j<nj;j++) {
+				sumj[j]=0.0;
+				for (i=0;i<ni;i++) sumj[j] += nn[i][j];
+				if (sumj[j] == 0.0) --nnj;
+			}
+			*df=nni*nnj-nni-nnj+1;
+			*chisq=0.0;
+			for (i=0;i<ni;i++) {
+				for (j=0;j<nj;j++) {
+					expctd=sumj[j]*sumi[i]/sum;
+					temp=nn[i][j]-expctd;
+					*chisq += temp*temp/(expctd+TINY);
+				}
+			}
+			*prob = probability::gammq( 0.5*(*df), 0.5*(*chisq) );
+			minij = nni < nnj ? nni-1 : nnj-1;
+			*cramrv=sqrt(*chisq/(sum*minij));
+			*ccc=sqrt(*chisq/(*chisq+sum));
+			
+			sumi.clear(); sumj.clear(); 
+		}
+		else{
+			std::string reason; 
+			reason = "Error: void statistic::cntab1(std::vector<std::vector<int>> &nn, int &ni, int &nj, double *chisq, double *df, double *prob, double *cramrv, double *ccc)\n"; 
+			reason += "Input array dimensions are not correct\n"; 
+			throw std::invalid_argument(reason); 
+		}	
+	}
+	catch(std::invalid_argument &e){
+		std::cerr<<e.what();
+	}
+}
+
+void statistic::cntab2(std::vector<std::vector<int>> &nn, int &ni, int &nj, double *h, double *hx, double *hy, double *hygx, double *hxgy, double *uygx, double *uxgy, double *uxy)
+{
+	// Given a two-dimensional contingency table in the form of an integer array nn[i][j], where i
+	// labels the x variable and ranges from 1 to ni, j labels the y variable and ranges from 1 to nj,
+	// this routine returns the entropy h of the whole table, the entropy hx of the x distribution, the
+	// entropy hy of the y distribution, the entropy hygx of y given x, the entropy hxgy of x given y,
+	// the dependency uygx of y on x (eq. 14.4.15), the dependency uxgy of x on y (eq. 14.4.16),
+	// and the symmetrical dependency uxy (eq. 14.4.17).
+
+	// null hypothesis is that the two variables x and y have no association
+
+	try{
+		if(ni>0 && nj > 0){
+			int i,j;
+			double sum=0.0, TINY = 1.0e-30,p; 
+				
+			std::vector<double> sumi(ni, 0.0);
+			std::vector<double> sumj(nj, 0.0);
+
+			for (i=0;i<ni;i++) {
+				sumi[i]=0.0;
+				for (j=0;j<nj;j++) {
+					sumi[i] += nn[i][j];
+					sum += nn[i][j];
+				}
+			}
+
+			for (j=0;j<nj;j++) {
+				sumj[j]=0.0;
+				for (i=0;i<ni;i++)
+					sumj[j] += nn[i][j];
+			}
+
+			*hx=0.0;
+			for (i=0;i<ni;i++){
+				if (sumi[i]) {
+					p=sumi[i]/sum;
+					*hx -= p*log(p);
+				}
+			}
+
+			*hy=0.0;
+			for (j=0;j<nj;j++){
+				if (sumj[j]) {
+					p=sumj[j]/sum;
+					*hy -= p*log(p);
+				}
+			}
+
+			*h=0.0;
+			for (i=0;i<ni;i++){
+				for (j=0;j<nj;j++){
+					if (nn[i][j]) {
+						p=nn[i][j]/sum;
+						*h -= p*log(p);
+					}
+				}
+			}
+
+			*hygx=(*h)-(*hx);
+			*hxgy=(*h)-(*hy);
+			*uygx=(*hy-*hygx)/(*hy+TINY);
+			*uxgy=(*hx-*hxgy)/(*hx+TINY);
+			*uxy=2.0*(*hx+*hy-*h)/(*hx+*hy+TINY);
+			
+			sumi.clear(); sumj.clear(); 
+		}
+		else{
+			std::string reason; 
+			reason = "Error: void statistic::cntab2(std::vector<std::vector<int>> &nn, int &ni, int &nj, double *h, double *hx, double *hy, double *hygx, double *hxgy, double *uygx, double *uxgy, double *uxy)\n"; 
+			reason += "Input array dimensions are not correct\n"; 
+			throw std::invalid_argument(reason); 
+		}
+	}
+	catch(std::invalid_argument &e){
+		std::cerr<<e.what();
+	}
+
+}
+
+void statistic::pearsn(std::vector<double> &x, std::vector<double> &y, int &n, double *r, double *prob, double *z)
+{
+	// Given two arrays x[0..n] and y[0..n], this routine computes their correlation coefficient
+	// r (returned as r), the significance level at which the null hypothesis of zero correlation is
+	// disproved (prob whose small value indicates a significant correlation), and Fisher’s z (returned
+	// as z), whose value can be used in further statistical tests
+
+	// null hypothesis is that x and y are uncorrelated
+
+	// significance of the correlation is the probability that r should be larger than observed value
+	// prob ~ 0 => x, y are significantly correlated
+
+	try{
+		if(n > 3){
+
+			int j;
+			double yt,xt,t,df;
+			double syy=0.0,sxy=0.0,sxx=0.0,ay=0.0,ax=0.0,TINY=1.0e-20;
+
+			for (j=0;j<n;j++) {
+				ax += x[j];
+				ay += y[j];
+			}
+			ax /= n;
+			ay /= n;
+			for (j=0;j<n;j++) {
+				xt=x[j]-ax;
+				yt=y[j]-ay;
+				sxx += xt*xt;
+				syy += yt*yt;
+				sxy += xt*yt;
+			}
+			*r=sxy/sqrt(sxx*syy);
+			*z=0.5*log((1.0+(*r)+TINY)/(1.0-(*r)+TINY));
+			df=n-2;
+			t=(*r)*sqrt(df/((1.0-(*r)+TINY)*(1.0+(*r)+TINY)));
+			*prob=probability::betai(0.5*df,0.5,df/(df+t*t));
+		}
+		else{
+			std::string reason; 
+			reason = "Error: void statistic::pearsn(std::vector<double> &x, std::vector<double> &y, int n, double *r, double *prob, double *z)\n"; 
+			reason += "Input array dimensions are not correct\n"; 
+			throw std::invalid_argument(reason); 
+		}
+	}
+	catch(std::invalid_argument &e){
+		std::cerr<<e.what();
+	}
+}
+
+void statistic::spear(std::vector<double> &data1, std::vector<double> &data2, int &n, double *d, double *zd, double *probd, double *rs, double *probrs)
+{
+	// Given two data arrays, data1[0..n-1] and data2[0..n-1], this routine returns their sum-squared
+	// difference of ranks as D, the number of standard deviations by which D deviates from its null hypothesis
+	// expected value as zd, the two-sided significance level of this deviation as probd,
+	// Spearman’s rank correlation rs as rs, and the two-sided significance level of its deviation from
+	// zero as probrs. The external routines crank (below) and sort2 (8.2) are used. A small value
+	// of either probd or probrs indicates a significant correlation (rs positive) or anticorrelation
+	// (rs negative).
+
+	// null hypothesis is that x and y are uncorrelated
+
+	try{
+		if(n > 3){
+			int j;
+			double vard,t,sg,sf,fac,en3n,en,df,aved;
+			std::vector<double> wksp1(n, 0.0);
+			std::vector<double> wksp2(n, 0.0);
+
+			for (j=0;j<n;j++) {
+				wksp1[j]=data1[j];
+				wksp2[j]=data2[j];
+			}
+			template_funcs::sort2(wksp1,wksp2);
+			crank(n,wksp1,&sf);
+			template_funcs::sort2(wksp2,wksp1);
+			crank(n,wksp2,&sg);
+			*d=0.0;
+			for (j=0;j<n;j++){
+				*d += template_funcs::DSQR(wksp1[j]-wksp2[j]);
+			}
+			en=n;
+			en3n=en*en*en-en;
+			aved=en3n/6.0-(sf+sg)/12.0;
+			fac=(1.0-sf/en3n)*(1.0-sg/en3n);
+			vard=((en-1.0)*en*en*template_funcs::DSQR(en+1.0)/36.0)*fac;
+			*zd=(*d-aved)/sqrt(vard);
+			*probd=probability::erfcc(fabs(*zd)/1.4142136);
+			*rs=(1.0-(6.0/en3n)*(*d+(sf+sg)/12.0))/sqrt(fac);
+			fac=(*rs+1.0)*(1.0-(*rs));
+			if (fac > 0.0) {
+				t=(*rs)*sqrt((en-2.0)/fac);
+				df=en-2.0;
+				*probrs=probability::betai(0.5*df,0.5,df/(df+t*t));
+			} else{
+				*probrs=0.0;
+			}
+			wksp2.clear(); wksp1.clear(); 
+		}
+		else{
+			std::string reason; 
+			reason = "Error: void statistic::pearsn(std::vector<double> &x, std::vector<double> &y, int n, double *r, double *prob, double *z)\n"; 
+			reason += "Input array dimensions are not correct\n"; 
+			throw std::invalid_argument(reason); 
+		}
+	}
+	catch(std::invalid_argument &e){
+		std::cerr<<e.what();
+	}
+}
+
+void statistic::crank(int &n, std::vector<double> &w, double *s)
+{
+	// Given a sorted array w[0..n-1], replaces the elements by their rank, including midranking of ties
+	// and returns as s the sum of f^{3}-f where f is the number of elements in each tie
+
+	try{
+		if(n > 3){
+			int j=1,ji,jt;
+			double t,rank;
+
+			*s=0.0;
+			while (j < n) {
+				if (w[j] != w[j-1]) {
+					w[j-1]=j;
+					++j;
+				} else {
+					for (jt=j+1;jt<=n && w[jt-1]==w[j-1];jt++);
+					rank=0.5*(j+jt-1);
+					for (ji=j;ji<=(jt-1);ji++) w[ji-1]=rank;
+					t=jt-j;
+					*s += (t*t*t-t);
+					j=jt;
+				}
+			}
+			if (j == n) w[n-1]=n; 		
+		}
+		else{
+			std::string reason; 
+			reason = "Error: void statistic::crank(int n, std::vector<double> &w, double *s)\n"; 
+			reason += "Input array dimensions are not correct\n"; 
+			throw std::invalid_argument(reason); 
+		}
+	}
+	catch(std::invalid_argument &e){
+		std::cerr<<e.what();
+	}
+}
+
+void statistic::kendl1(std::vector<double> &data1, std::vector<double> & data2, int &n, double *tau, double *z, double *prob)
+{
+	// Given data arrays data1[1..n] and data2[1..n], this program returns Kendall’s tau
+	// its number of standard deviations from zero as z, and its two-sided significance level as prob.
+	// Small values of prob indicate a significant correlation (tau positive) or anticorrelation (tau negative).
+
+	try{
+		if(n > 3){
+			int n2=0,n1=0,k,j;
+			int is=0;
+			double svar,aa,a2,a1;
+
+			for (j=0;j<n;j++) {
+				for (k=(j+1);k<n;k++) {
+					a1=data1[j]-data1[k];
+					a2=data2[j]-data2[k];
+					aa=a1*a2;
+					if (aa) {
+						++n1;
+						++n2;
+						aa > 0.0 ? ++is : --is;
+					} else {
+						if (a1) ++n1;
+						if (a2) ++n2;
+					}
+				}
+			}
+			*tau=is/(sqrt((double) n1)*sqrt((double) n2));
+			svar=(4.0*n+10.0)/(9.0*n*(n-1.0));
+			*z=(*tau)/sqrt(svar);
+			//*prob=probability::erfcc(fabs(*z)/1.4142136);
+			*prob=probability::erfcc(fabs(*z)/sqrt(2));
+		}
+		else{
+			std::string reason; 
+			reason = "Error: void statistic::kendl1(std::vector<double> &data1, std::vector<double> & data2, int &n, double *tau, double *z, double *prob)\n"; 
+			reason += "Input array dimensions are not correct\n"; 
+			throw std::invalid_argument(reason); 
+		}
+	}
+	catch(std::invalid_argument &e){
+		std::cerr<<e.what();
+	}
+}
+
+void statistic::kendl2(std::vector<std::vector<double>> &tab, int &i, int &j, double *tau, double *z, double *prob)
+{
+	// Given a two-dimensional table tab[1..i][1..j], such that tab[k][l] contains the number
+	// of events falling in bin k of one variable and bin l of another, this program returns Kendall’s
+	// as tau, its number of standard deviations from zero as z, and its two-sided significance level as
+	// prob. Small values of prob indicate a significant correlation (tau positive) or anticorrelation
+	// (tau negative) between the two variables. Although tab is a float array, it will normally
+	// contain integral values.
+
+	try{
+		if(i > 3 && j > 3){
+			int nn,mm,m2,m1,lj,li,l,kj,ki,k;
+			double svar,s=0.0,points,pairs,en2=0.0,en1=0.0;
+
+			nn=i*j;
+			points=tab[i-1][j-1];
+			for (k=0;k<=nn-2;k++) {
+				ki=(k/j);
+				kj=k-j*ki;
+				points += tab[ki+1][kj+1];
+				for (l=k+1;l<=nn-1;l++) {
+					li=l/j;
+					lj=l-j*li;
+					mm=(m1=li-ki)*(m2=lj-kj);
+					pairs=tab[ki+1][kj+1]*tab[li+1][lj+1];
+					if (mm) {
+						en1 += pairs;
+						en2 += pairs;
+						s += (mm > 0 ? pairs : -pairs);
+					} else {
+						if (m1) en1 += pairs;
+						if (m2) en2 += pairs;
+					}
+				}
+			}
+			*tau=s/sqrt(en1*en2);
+			svar=(4.0*points+10.0)/(9.0*points*(points-1.0));
+			*z=(*tau)/sqrt(svar);
+			//*prob=probability::erfcc(fabs(*z)/1.4142136);
+			*prob=probability::erfcc(fabs(*z)/sqrt(2));
+		}
+		else{
+			std::string reason; 
+			reason = "Error: void statistic::kendl2(std::vector<std::vector<double>> &tab, int &i, int &j, double *tau, double *z, double *prob)\n"; 
+			reason += "Input array dimensions are not correct\n"; 
+			throw std::invalid_argument(reason); 
+		}
+	}
+	catch(std::invalid_argument &e){
+		std::cerr<<e.what();
+	}
+}

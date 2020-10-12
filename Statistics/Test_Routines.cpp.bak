@@ -1,0 +1,699 @@
+#ifndef ATTACH_H
+#include "Attach.h"
+#endif
+
+void testing::compute_moments()
+{
+	// Compute the moments of some of the sample data sets
+	// R. Sheehan 11 - 9 - 2017
+
+	std::string filename; 
+	std::vector<double> data;
+	int n_data; 
+	double mean, var;
+
+	filename = "Data_1.txt";  
+	
+	useful_funcs::read_into_vector(filename, data, n_data, true); 
+
+	statistic::avevar(data, n_data, &mean, &var);
+
+	std::cout<<"\nFile:\t" + filename + "\n"; 
+	std::cout<<"Size:\t" + template_funcs::toString(n_data) + "\n"; 
+	std::cout<<"Average:\t" + template_funcs::toString(mean, 4) + "\n"; 
+	std::cout<<"Variance:\t" + template_funcs::toString(var, 4) + "\n\n"; 
+
+	data.clear(); 
+
+	filename = "Data_6.txt"; 
+	
+	useful_funcs::read_into_vector(filename, data, n_data, true); 
+
+	statistic::avevar(data, n_data, &mean, &var);
+
+	std::cout<<"\nFile:\t" + filename + "\n"; 
+	std::cout<<"Size:\t" + template_funcs::toString(n_data) + "\n"; 
+	std::cout<<"Average:\t" + template_funcs::toString(mean, 4) + "\n"; 
+	std::cout<<"Variance:\t" + template_funcs::toString(var, 4) + "\n\n"; 
+
+	data.clear(); 
+}
+
+void testing::perform_t_test_diff_mean_same_var()
+{
+	// perform a Student's t-test on two distributions with different means but the same variance
+	// determine if the data have significantly different mean
+	// R. Sheehan 11 - 9 - 2017
+
+	std::string file1, file2; 
+	std::vector<double> data1, data2;
+	int n_data_1, n_data_2;
+	double mean, var, t_stat, p_val; 
+
+	bool loud = true; 
+
+	//file1 = "Data_1.txt"; // mu = 0, sig = 1
+	//file2 = "Data_6.txt";  // mu = 1, sig = 1
+
+	//file1 = "Data_3.txt"; // mu = 1.5, sig = 0.5
+	file1 = "Data_4.txt";  // mu = 0, sig = 0.5
+	file2 = "Data_5.txt";  // mu = 0.01, sig = 0.5
+
+	useful_funcs::read_into_vector(file1, data1, n_data_1, loud);
+
+	statistic::avevar(data1, n_data_1, &mean, &var);
+
+	std::cout<<"\nFile:\t" + file1 + "\n"; 
+	std::cout<<"Size:\t" + template_funcs::toString(n_data_1) + "\n"; 
+	std::cout<<"Average:\t" + template_funcs::toString(mean, 4) + "\n"; 
+	std::cout<<"Variance:\t" + template_funcs::toString(var, 4) + "\n\n";
+
+	useful_funcs::read_into_vector(file2, data2, n_data_2, loud);
+
+	statistic::avevar(data2, n_data_2, &mean, &var);
+
+	std::cout<<"\nFile:\t" + file2 + "\n"; 
+	std::cout<<"Size:\t" + template_funcs::toString(n_data_2) + "\n"; 
+	std::cout<<"Average:\t" + template_funcs::toString(mean, 4) + "\n"; 
+	std::cout<<"Variance:\t" + template_funcs::toString(var, 4) + "\n\n";
+
+	statistic::ttest(data1, n_data_1, data2, n_data_2, &t_stat, &p_val);
+
+	std::cout<<"\nResult of Student's t-test, assuming equal variances\n";
+	std::cout<<"t-statistic:\t" + template_funcs::toString(t_stat) + "\n"; 
+	std::cout<<"p-value:\t" +  template_funcs::toString(p_val) + "\n"; 
+	if(p_val < 0.05){
+		std::cout<<"Data have significantly different means\n\n";
+	}
+	else{
+		std::cout<<"Data do not have significantly different means\n\n";
+	}
+}
+
+void testing::perform_t_test_diff_mean_diff_var()
+{
+	// perform a Student's t-test on two distributions with different means and different variance
+	// determine if the data // determine if the data have significantly different mean
+	// R. Sheehan 11 - 9 - 2017
+
+	std::string file1, file2; 
+	std::vector<double> data1, data2;
+	int n_data_1, n_data_2;
+	double mean, var, t_stat, p_val; 
+
+	bool loud = true; 
+
+	//file1 = "Data_1.txt"; // mu = 0, sig = 1
+	file1 = "Data_6.txt";  // mu = 1, sig = 1
+
+	file2 = "Data_3.txt"; // mu = 1.5, sig = 0.5
+	//file1 = "Data_4.txt";  // mu = 0, sig = 0.5
+	//file2 = "Data_5.txt";  // mu = 0.01, sig = 0.5
+
+	useful_funcs::read_into_vector(file1, data1, n_data_1, loud);
+
+	statistic::avevar(data1, n_data_1, &mean, &var);
+
+	std::cout<<"\nFile:\t" + file1 + "\n"; 
+	std::cout<<"Size:\t" + template_funcs::toString(n_data_1) + "\n"; 
+	std::cout<<"Average:\t" + template_funcs::toString(mean, 4) + "\n"; 
+	std::cout<<"Variance:\t" + template_funcs::toString(var, 4) + "\n\n";
+
+	useful_funcs::read_into_vector(file2, data2, n_data_2, loud);
+
+	statistic::avevar(data2, n_data_2, &mean, &var);
+
+	std::cout<<"\nFile:\t" + file2 + "\n"; 
+	std::cout<<"Size:\t" + template_funcs::toString(n_data_2) + "\n"; 
+	std::cout<<"Average:\t" + template_funcs::toString(mean, 4) + "\n"; 
+	std::cout<<"Variance:\t" + template_funcs::toString(var, 4) + "\n\n";
+
+	statistic::tutest(data1, n_data_1, data2, n_data_2, &t_stat, &p_val);
+
+	std::cout<<"\nResult of Student's t-test, assuming unequal variances\n";
+	std::cout<<"t-statistic:\t" + template_funcs::toString(t_stat) + "\n"; 
+	std::cout<<"p-value:\t" +  template_funcs::toString(p_val) + "\n"; 
+	if(p_val < 0.05){
+		std::cout<<"Data have significantly different means\n\n";
+	}
+	else{
+		std::cout<<"Data do not have significantly different means\n\n";
+	}
+}
+
+void testing::perform_f_test_diff_mean_diff_var()
+{
+	// perform a Fischer F-test on two distributions with different means and different variance
+	// determine if the data have significantly different variance
+	// R. Sheehan 11 - 9 - 2017
+
+	std::string file1, file2; 
+	std::vector<double> data1, data2;
+	int n_data_1, n_data_2;
+	double mean, var, t_stat, p_val; 
+
+	bool loud = true; 
+
+	//file1 = "Data_1.txt"; // mu = 0, sig = 1
+	//file2 = "Data_6.txt";  // mu = 1, sig = 1
+
+	file1 = "Data_3.txt"; // mu = 1.5, sig = 0.5
+	file2 = "Data_4.txt";  // mu = 0, sig = 0.5
+	//file2 = "Data_5.txt";  // mu = 0.01, sig = 0.5
+
+	useful_funcs::read_into_vector(file1, data1, n_data_1, loud);
+
+	statistic::avevar(data1, n_data_1, &mean, &var);
+
+	std::cout<<"\nFile:\t" + file1 + "\n"; 
+	std::cout<<"Size:\t" + template_funcs::toString(n_data_1) + "\n"; 
+	std::cout<<"Average:\t" + template_funcs::toString(mean, 4) + "\n"; 
+	std::cout<<"Variance:\t" + template_funcs::toString(var, 4) + "\n\n";
+
+	useful_funcs::read_into_vector(file2, data2, n_data_2, loud);
+
+	statistic::avevar(data2, n_data_2, &mean, &var);
+
+	std::cout<<"\nFile:\t" + file2 + "\n"; 
+	std::cout<<"Size:\t" + template_funcs::toString(n_data_2) + "\n"; 
+	std::cout<<"Average:\t" + template_funcs::toString(mean, 4) + "\n"; 
+	std::cout<<"Variance:\t" + template_funcs::toString(var, 4) + "\n\n";
+
+	statistic::ftest(data1, n_data_1, data2, n_data_2, &t_stat, &p_val);
+
+	std::cout<<"\nResult of Fischer's f-test\n";
+	std::cout<<"t-statistic:\t" + template_funcs::toString(t_stat) + "\n"; 
+	std::cout<<"p-value:\t" +  template_funcs::toString(p_val) + "\n"; 
+	if(p_val < 0.05){
+		std::cout<<"Data have significantly different variances\n\n";
+	}
+	else{
+		std::cout<<"Data do not have significantly different variances\n\n";
+	}
+}
+
+void testing::perform_chsone_test()
+{
+	// perform chi-sq test to determine if the data in bins is from the expected distribution given by ebins
+	// ebins = expected distribution
+	// bins = actual data
+	// chisq = chi-sq value
+	// prob = probability that ebins and bins represent the same distribution
+	// R. Sheehan 28 - 9 - 2017
+
+	int NBINS = 10, NPTS = 2000; 
+
+	int i, ibin, k; 
+	long idum = -8; 
+	double chisq, df, prob, x; 
+
+	//df = degrees of freedom = NBINS
+
+	// declare some vectors to hold the binned data
+	std::vector<double> bins(NBINS,0.0); 
+	std::vector<double> ebins(NBINS); 
+
+	// generate exponentially distributed data bins
+	// How is the width of each bin determined? 
+	for(k=0; k<NPTS; k++){
+		x = rng::expdev(&idum); // generate exponentially distributed random number
+		ibin = static_cast<int>( x*NBINS/3.0 ); // determine bin into which x is to be placed
+		//std::cout<<"x = "<<x<<", ibin = "<<ibin<<"\n"; 
+		if(ibin < NBINS) ++bins[ibin]; // increment the number of counts in a bin
+	}
+
+	/*std::cout<<"The binned data is\n"; 
+	for(i=0;i<NBINS;i++) std::cout<<bins[i]<<"\n"; 
+	std::cout<<"\n";*/ 
+
+	// generate binned data from a known distribution for comparison
+	for(i=0; i<NBINS; i++){
+		ebins[i] = 3.0*NPTS/NBINS*exp(-3.0*(i+0.5)/NBINS); 
+	}
+
+	// perform chi-sq test to determine if data if bins is from same distribution as data in ebins
+	int knstrn = 0; 
+	statistic::chsone(bins, ebins, NBINS, knstrn, &df, &chisq, &prob); 
+
+	std::cout<<std::setw(15)<<"expected"<<std::setw(16)<<"observed"<<"\n"; 
+	std::cout<<std::fixed<<std::setprecision(2); 
+	for(i=0; i<NBINS; i++){
+		std::cout<<std::setw(14)<<ebins[i]<<std::setw(16)<<bins[i]<<"\n"; 
+	}
+	std::cout<<"\n"<<std::setw(19)<<"chi-squared";
+	std::cout<<std::setw(11)<<chisq<<"\n"; 
+	std::cout<<std::setw(19)<<"probability:"<<std::setw(11)<<prob<<"\n"; 
+	//std::cout<<std::setw(19)<<"df:"<<std::setw(11)<<df<<"\n"; 
+}
+
+void testing::perform_chstwo_test()
+{
+	// perform chi-sq test to determine if the data in bins1 is from the same distribution as by bins2
+	// chisq = chi-sq value
+	// prob = probability that ebins and bins represent the same distribution
+	// R. Sheehan 28 - 9 - 2017
+
+	int NBINS = 10, NPTS = 2000; 
+
+	int i, ibin, k; 
+	long idum = -17; 
+	double chisq, df, prob, x; 
+
+	//df = degrees of freedom = NBINS
+
+	// declare some vectors to hold the binned data
+	std::vector<double> bins1(NBINS,0.0); 
+	std::vector<double> bins2(NBINS,0.0); 
+
+	// generate exponentially distributed data bins
+	// How is the width of each bin determined? 
+	for(k=0; k<NPTS; k++){
+
+		x = rng::expdev(&idum); // generate exponentially distributed random number
+		ibin = static_cast<int>( x*NBINS/3.0 ); // determine bin into which x is to be placed
+		if(ibin < NBINS) ++bins1[ibin]; // increment the number of counts in a bin
+
+		x = rng::expdev(&idum); // generate exponentially distributed random number
+		ibin = static_cast<int>( x*NBINS/3.0 ); // determine bin into which x is to be placed
+		if(ibin < NBINS) ++bins2[ibin]; // increment the number of counts in a bin
+	}
+
+	/*std::cout<<"The binned data is\n"; 
+	for(i=0;i<NBINS;i++) std::cout<<bins[i]<<"\n"; 
+	std::cout<<"\n";*/ 
+
+	// perform chi-sq test to determine if data from bins1 is from same distribution as data in bins2
+	int knstrn = 0; 
+	statistic::chstwo(bins1, bins2, NBINS, knstrn, &df, &chisq, &prob); 
+
+	std::cout<<std::setw(15)<<"data set 1"<<std::setw(16)<<"data set 2"<<"\n"; 
+	std::cout<<std::fixed<<std::setprecision(2); 
+	for(i=0; i<NBINS; i++){
+		std::cout<<std::setw(14)<<bins1[i]<<std::setw(16)<<bins2[i]<<"\n"; 
+	}
+	std::cout<<"\n"<<std::setw(19)<<"chi-squared";
+	std::cout<<std::setw(11)<<chisq<<"\n"; 
+	std::cout<<std::setw(19)<<"probability:"<<std::setw(11)<<prob<<"\n"; 
+	//std::cout<<std::setw(19)<<"df:"<<std::setw(11)<<df<<"\n"; 
+}
+
+double testing::ksfunc(double x)
+{
+	//return 1.0 - probability::erffc(x/sqrt(2.0)); 
+	return probability::erff(x/sqrt(2.0)); 
+}
+
+void testing::perform_ksone_test()
+{
+	// routine for examining the Kolmorgoriv-Smirnov test
+	// ksone use K-S criterion to compare single data set to an expected distribution
+	// kstwo use K-S criterion to compare two data sets
+	// this program creates data sets with Gaussian distributions and stepwise increasing variance
+	// and compares their cumulative distribution function to the expected result for Gaussian 
+	// distribution of unit variance, i.e the error function erff
+	// Increasing variance in the test distribution should reduce the likelihood that it was drawn from
+	// the same distribution represented by the comparison function
+	// R. Sheehan 28 - 9 - 2017
+
+	int NPTS = 1000; 
+	int i, j; 
+	long idum = (-5); 
+	double epsilon = 0.1, d, factr, prob, varnce;
+
+	std::vector<double> data(NPTS); 
+
+	std::cout<<std::setw(19)<<"variance ratio"<<std::setw(17)<<"k-s statistic";
+	std::cout<<std::setw(16)<<"probability"<<"\n\n"; 
+	std::cout<<std::fixed<<std::setprecision(7);
+	for(i=0; i<11; i++){
+		varnce = 1.0+i*epsilon;
+		factr = sqrt(varnce); 
+		for(j=0; j<NPTS; j++){
+			data[j] = factr*fabs(rng::gasdev(&idum)); 
+		}
+		statistic::ksone(data, NPTS, ksfunc, &d, &prob);
+		std::cout<<std::setw(16)<<varnce<<std::setw(17)<<d;
+		std::cout<<std::setw(17)<<prob<<"\n"; 
+	}
+}
+
+void testing::perform_kstwo_test()
+{
+	// routine for examining the Kolmorgoriv-Smirnov test
+	// ksone use K-S criterion to compare single data set to an expected distribution
+	// kstwo use K-S criterion to compare two data sets
+	// kstwo compares the cumulative distribution functions of two unbinned data sets data1 and data2
+	// In this program both data sets are Gaussian distributions but data2 is given a stepwise increase in variance
+
+	int N1 = 1000, N2 = 2000, i, j;
+	long idum = (-1357); 
+	double epsilon = 0.1, d, factr, prob, varnce; 
+	std::vector<double> data1(N1), data2(N2); 
+
+	for(i=0; i<N1; i++) data1[i] = rng::gasdev(&idum); 
+
+	std::cout<<std::setw(18)<<"vaariance ratio"<<std::setw(16)<<"k-s statistic";
+	std::cout<<std::setw(15)<<"probability\n\n"; 
+	std::cout<<std::fixed<<std::setprecision(6);
+	for(i=0; i<11; i++){
+		varnce = 1.0+i*epsilon; 
+		factr = sqrt(varnce); 
+		for(j=0; j<N2; j++) data2[j] = factr*rng::gasdev(&idum); 
+		statistic::kstwo(data1, N1, data2, N2, &d, &prob); 
+		std::cout<<std::setw(15)<<varnce<<std::setw(16)<<d;
+		std::cout<<std::setw(16)<<prob<<"\n"; 
+	}
+
+}
+
+void testing::read_tab1_data(std::string &header, std::vector<std::string> &months, std::vector<std::string> &accident_types, std::vector<std::vector<int>> &numbers)
+{
+	// Read the data stored in the file TABLE1.DAT
+	// store the names of the months in the vector months
+	// store the types of accidents listed in vector accident_types
+	// store the numbers of accidents in the vector numbers, columns = month, row = accident type
+	// R. Sheehan 11 - 1 - 2018
+
+	try{
+		std::string filename = "TABLE1.DAT";
+
+		std::ifstream the_file; 
+		the_file.open(filename, std::ios_base::in); 
+		if(the_file.is_open()){
+
+			std::string line, item; 
+
+			int line_num = 0; 
+			while( std::getline(the_file, line) ){
+
+				//extract the header from the file
+				if(line_num==0)header = line + '\n'; 
+				if(line_num==1)header += line; 
+
+				// parse the stream to extract the months
+				if(line_num == 2){					
+					std::istringstream linestream(line);
+					while(std::getline(linestream, item, ' ')){
+						if( !(item.find("Month:") != std::string::npos) ) { // only save the string if it is the name of a month
+							std::remove_if(item.begin(), item.end(), isspace); // remove all white space from the string
+							if( !item.empty() ) months.push_back(item); 
+						}
+					}
+				}
+				
+				// parse the stream to extract types and numbers of accident for each month
+				if(line_num>3){
+					std::istringstream linestream(line);
+					int item_cnt = 0; 
+					std::vector<int> acc_per_type; // vector to hold the numbers of accidents of each type
+					while(std::getline(linestream, item, ' ')){					
+						std::remove_if(item.begin(), item.end(), isspace); // remove all white space from the string
+						if(item_cnt == 0 && !item.empty() ) accident_types.push_back( item ); // save the names of the types of accidents
+						if(item_cnt > 0 && !item.empty() ) acc_per_type.push_back( std::stoi(item) ); // convert the number from string to int, atof(item.c_str()) will also work
+						item_cnt++; 
+					}
+					numbers.push_back(acc_per_type); 
+					acc_per_type.clear(); 
+				}
+
+				line_num++; 
+			}
+
+			the_file.close(); 
+		}
+		else{
+			std::string reason = "Error: Test_Routines::read_tab1_data\nCannot open file: " + filename + "\n";
+			throw std::invalid_argument(reason);
+		}
+	}
+	catch(std::invalid_argument &e){
+		std::cerr<<e.what();
+	}
+}
+
+void testing::read_tab2_data(std::string &header, std::vector<std::string> &months, std::vector<std::string> &cities, std::vector<std::string> &states, std::vector<double> &state_averages, std::vector<double> &state_latitudes, std::vector<std::vector<double>> &numbers)
+{
+	// Read the data stored in the file TABLE2.DAT
+	// store the names of the months in the vector months
+	// store the names of the states in the vector states
+	// store the state averages in the vector state_averages
+	// store the state latitudes in the vector state_latitude
+	// store the average monthly solar radiation in the vector numbers, columns = month, row = state
+	// R. Sheehan 29 - 3 - 2018
+
+	try{
+		std::string filename = "TABLE2.DAT";
+
+		std::ifstream the_file; 
+		the_file.open(filename, std::ios_base::in); 
+		if(the_file.is_open()){
+			std::string line, item; 
+
+			int line_num = 0; 
+			while( std::getline(the_file, line) ){
+
+				//extract the header from the file
+				if(line_num==0)header = line + '\n'; 
+				if(line_num==1)header += line; 
+
+				// parse the stream to extract the months
+				if(line_num == 2){					
+					std::istringstream linestream(line);
+					while(std::getline(linestream, item, ' ')){
+						bool c1 = !(item.find("Month:") != std::string::npos); 
+						bool c2 = !(item.find("ave") != std::string::npos);
+						bool c3 = !(item.find("lat") != std::string::npos);
+						if( c1 && c2 && c3 ) { // only save the string if it is the name of a month
+							std::remove_if(item.begin(), item.end(), isspace); // remove all white space from the string
+							if( !item.empty() ) months.push_back(item); 
+						}
+					}
+				}
+
+				// parse the stream to extract state, numbers for each month, state averages and state latitudes
+				if(line_num>3){
+					std::istringstream linestream(line);
+					int item_cnt = 0, mth_cnt = 0, num_mths = 12, end_rad_per_state, avg_pos; 
+					bool get_avg, get_lat; 
+					std::vector<double> rad_per_state; // vector to hold the numbers of accidents of each type
+					while(std::getline(linestream, item, ' ')){							
+						std::remove_if(item.begin(), item.end(), isspace); // remove all white space from the string
+						if(item_cnt == 0 && !item.empty() ){
+							cities.push_back( item ); // save the names of the cities
+							end_rad_per_state = -1; avg_pos = -1;
+							get_avg = false; get_lat = false; 
+						}
+						if(item_cnt == 1 && !item.empty() ) states.push_back( item ); // save the names of the cities						
+						if(item_cnt > 1 && !item.empty() && (int)(rad_per_state.size())< num_mths){
+							rad_per_state.push_back( std::stof(item) ); // convert the number from string to int, atof(item.c_str()) will also work
+							mth_cnt++; 
+						}
+						if(mth_cnt == 12){
+							end_rad_per_state = item_cnt; // mark position where all month data per line is stored in vector
+							mth_cnt = 0; 
+							get_avg = true; get_lat = false; 
+						}
+						// extract state averages and latitudes						
+						if(get_avg && item_cnt > end_rad_per_state && !item.empty()){
+							state_averages.push_back(std::stof(item));
+							avg_pos = item_cnt;
+							get_avg = false; get_lat = true; 
+						}
+						// extract state latitudes
+						if(get_lat && item_cnt > avg_pos && !item.empty()){
+							state_latitudes.push_back(std::stof(item));
+							get_avg = false; get_lat = false; 
+						}
+						item_cnt++; 
+					}
+					numbers.push_back(rad_per_state); 
+					rad_per_state.clear(); 
+				}
+
+				line_num++; 
+			}
+
+			the_file.close(); 
+		}
+		else{
+			std::string reason = "Error: Test_Routines::read_tab2_data\nCannot open file: " + filename + "\n";
+			throw std::invalid_argument(reason);
+		}
+
+	
+	}
+	catch(std::invalid_argument &e){
+		std::cerr<<e.what();
+	}
+}
+
+void testing::perform_con_tab_test()
+{
+	// Test the routines for computing the measures of association for a contingency table
+
+	// Read the data from the file
+	std::string Head; 
+
+	std::vector<std::string> Mths; 
+
+	std::vector<std::string> Acc; 
+
+	std::vector< std::vector<int> > Num; 
+	
+	testing::read_tab1_data(Head, Mths, Acc, Num);
+
+	// perform test based on Cramer's V and CC
+	int nrows, ncols; 
+	double chisq, df, prob, cramrv, ccc; 
+
+	nrows = static_cast<int>(Num.size()); 
+	ncols = static_cast<int>(Num[0].size()); 
+
+	statistic::cntab1(Num, nrows, ncols, &chisq, &df, &prob, &cramrv, &ccc);
+
+	std::cout<<"Results from Contingency Table Analysis\n";
+	std::cout<<std::fixed<<std::setprecision(4);
+	std::cout<<std::endl<<std::setw(20)<<"chi-squared";
+	std::cout<<std::setw(20)<<chisq<<std::endl;
+	std::cout<<std::endl<<std::setw(20)<<"degrees of freedom";
+	std::cout<<std::setw(20)<<df<<std::endl;
+	std::cout<<std::endl<<std::setw(20)<<"probability";
+	std::cout<<std::setw(20)<<prob<<std::endl;
+	std::cout<<std::endl<<std::setw(20)<<"cramer-V";
+	std::cout<<std::setw(20)<<cramrv<<std::endl;
+	std::cout<<std::endl<<std::setw(20)<<"contingency coeff.";
+	std::cout<<std::setw(20)<<ccc<<std::endl<<std::endl;
+
+	// perform test based on measures of entropy
+	double h, hx, hy, hygx, hxgy, uygx, uxgy, uxy; 
+
+	statistic::cntab2(Num, nrows, ncols, &h, &hx, &hy, &hygx, &hxgy, &uygx, &uxgy, &uxy); 
+
+	std::cout<<"Results from entropy-based Contingency Table Analysis\n";
+	std::cout<<std::fixed<<std::setprecision(4);
+	std::cout<<std::endl<<std::setw(20)<<"entropy of table";
+	std::cout<<std::setw(20)<<h<<std::endl;
+	std::cout<<std::endl<<std::setw(20)<<"entropy of x";
+	std::cout<<std::setw(20)<<hx<<std::endl;
+	std::cout<<std::endl<<std::setw(20)<<"entropy of y";
+	std::cout<<std::setw(20)<<hy<<std::endl;
+	std::cout<<std::endl<<std::setw(20)<<"entropy of y|x";
+	std::cout<<std::setw(20)<<hygx<<std::endl;
+	std::cout<<std::endl<<std::setw(20)<<"entropy of x|y";
+	std::cout<<std::setw(20)<<hxgy<<std::endl;
+	std::cout<<std::endl<<std::setw(20)<<"dependency of y|x";
+	std::cout<<std::setw(20)<<uygx<<std::endl;
+	std::cout<<std::endl<<std::setw(20)<<"dependency of x|y";
+	std::cout<<std::setw(20)<<uxgy<<std::endl;
+	std::cout<<std::endl<<std::setw(20)<<"symmetrical depend.";
+	std::cout<<std::setw(20)<<uxy<<std::endl;
+}
+
+void testing::perform_pearson_test()
+{
+	// routine for testing the calculation of Pearson correlation coefficient
+	// this program examines two variables to find linear correlations
+	// It returns linear correlation coefficient r, a probability of correlation prob and Fisher's z
+	// This sample program sets up data dose and spore which show hypothetical spore count from plants 
+	// exposed to various levels of gamma rays
+	// R. Sheehan 29 - 3 - 2018
+
+	int N; 
+	double prob, r, z; 
+
+	std::string dose_file = "Dose.txt";
+	std::string spore_file = "Spore.txt";
+
+	std::vector<double> dose; 
+	std::vector<double> spore; 
+
+	// read the data from the files
+	useful_funcs::read_into_vector(dose_file, dose, N); 
+	useful_funcs::read_into_vector(spore_file, spore, N); 
+
+	// print the data to screen
+	std::cout<<"Effect of Gamma Rays on Marigolds\n"; 
+	std::cout<<std::setw(16)<<"Count Rate (cpm)"; 
+	std::cout<<std::setw(24)<<"Pollen Index\n";
+	std::cout<<std::fixed<<std::setprecision(2);
+	for(int i = 0; i < N; i++){
+		std::cout<<std::setw(10)<<dose[i]<<std::setw(26)<<spore[i]<<"\n"; 
+	}
+
+	// Compute Pearson's r correlation coefficient and related probabilities
+	statistic::pearsn(dose, spore, N, &r, &prob, &z); 
+
+	std::cout<<"\n"<<std::setw(30)<<"PEARSN"<<std::setw(17)<<"Expected\n"; 
+	std::cout<<"Corr. Coeff."<<std::setw(9)<<" ";
+	std::cout<<std::fixed<<std::setprecision(6);
+	std::cout<<std::setw(10)<<r<<std::setw(16)<<0.9069586<<"\n";
+	std::cout<<"Probability"<<std::setw(10)<<" ";
+	std::cout<<std::setw(10)<<prob<<std::setw(16)<<0.2926505e-3<<"\n";
+	std::cout<<"Fisher's z"<<std::setw(11)<<" ";
+	std::cout<<std::setw(10)<<z<<std::setw(16)<<1.510110<<"\n";
+
+	// compute the significance level at which r differs from r_{true}, assuming z^{bar}=0
+	double test_val = fabs(z)*sqrt(0.5*((double)(N)-3.0)); 
+	double alt_p_value = probability::erffc(test_val); 
+
+	std::cout<<"Significance Level at which r differs from r-true: "<<alt_p_value<<"\n"; 
+}
+
+void testing::perform_spearman_test()
+{
+	// Rank order correlation is done with spear to compare two distributions data1 and data2 for correlation
+	// Correlations are reported in terms of d and rs
+	// d = sum squared difference in ranks
+	// rs = Spearman's rank order correlation parameter
+	// This program looks at the solar radiation data in TABLE2.DAT and looks for correlations between columns of the table
+	// with each column considered a separate data set
+
+	// containers for storing the data
+	int i, j; 
+	int NDAT = 20, NMON = 12; 
+	double d, probd, probrs, rs, zd; 
+	std::string Head; 
+	std::vector<std::string> Mths; 	
+	std::vector<std::string> Cities;
+	std::vector<std::string> States;
+	std::vector<double> State_Averages;
+	std::vector<double> State_Latitudes;
+	std::vector< std::vector<double> > Rays;
+	std::vector<double> data1(NDAT); 
+	std::vector<double> data2(NDAT); 
+
+	// read the data from the file
+	read_tab2_data(Head, Mths, Cities, States, State_Averages, State_Latitudes, Rays);
+
+	// Check temperature correlations between different months
+	std::cout<<"Are sunny summer places also sunny winter places?\n";
+	std::cout<<"Check correlation of samples US solar radiation\n";
+	std::cout<<"Compare July with other months\n\n"; 
+	std::cout<<"month"<<std::setw(10)<<"d"<<std::setw(15)<<"std. dev.";
+	std::cout<<std::setw(12)<<"probd"<<std::setw(16)<<"spearman-r";
+	std::cout<<std::setw(11)<<"probrs\n\n";
+	
+	// store july data in data1
+	for(i=0;i<NDAT;i++){
+		data1[i] = Rays[i][0]; 
+	}
+
+	// loop over correlation calculation for remaining months
+	for(j=0; j<NMON; j++){		
+		
+		// store data for month j in data2
+		for(i=0; i<NDAT; i++){
+			data2[i] = Rays[i][j]; 
+		}
+
+		// perform spear rank order correlation test
+		statistic::spear(data1, data2, NDAT, &d, &zd, &probd, &rs, &probrs); 
+
+		// output computed results
+		std::cout<<std::fixed<<std::setprecision(2); 
+		std::cout<<std::setw(4)<<Mths[j]<<std::setw(13)<<d; 
+		std::cout<<std::fixed<<std::setprecision(6); 
+		std::cout<<std::setw(13)<<zd<<std::setw(13)<<probd<<std::setw(14)<<rs; 
+		std::cout<<std::setw(13)<<probrs<<"\n"; 
+	}
+}
