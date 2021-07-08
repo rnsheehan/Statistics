@@ -33,7 +33,7 @@ int main()
 
 	//testing::perform_f_test_diff_mean_diff_var(); 
 
-	//testing::perform_chsone_test(); 
+	testing::perform_chsone_test(); 
 
 	//testing::perform_ksone_test(); 
 
@@ -74,7 +74,7 @@ int main()
 
 	//testing::perform_kendall_test_1(); 
 
-	testing::perform_kendall_test_2();
+	//testing::perform_kendall_test_2();
 	
 	std::cout<<"Press enter to close console\n";
 	std::cin.get(); 
