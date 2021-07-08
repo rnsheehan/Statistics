@@ -647,6 +647,7 @@ void testing::perform_spearman_test()
 	// rs = Spearman's rank order correlation parameter
 	// This program looks at the solar radiation data in TABLE2.DAT and looks for correlations between columns of the table
 	// with each column considered a separate data set
+	// R. Sheehan 29 - 3 - 2018
 
 	// containers for storing the data
 	int i, j; 
@@ -695,5 +696,196 @@ void testing::perform_spearman_test()
 		std::cout<<std::fixed<<std::setprecision(6); 
 		std::cout<<std::setw(13)<<zd<<std::setw(13)<<probd<<std::setw(14)<<rs; 
 		std::cout<<std::setw(13)<<probrs<<"\n"; 
+	}
+}
+
+void testing::rank_order_test()
+{
+	// This program looks at the solar radiation data in TABLE2.DAT and computes the rank order for the data therein
+	// Each column of the solar flux data is replaced by the rank order of its entries
+	// R. Sheehan 12 - 4 - 2018
+
+	// Containers for holding the data
+	int NDAT = 20, NMON = 12;
+	int i, j; 
+	std::string Head;
+	std::vector<std::string> Mths;
+	std::vector<std::string> Cities;
+	std::vector<std::string> States;
+	std::vector<double> State_Averages;
+	std::vector<double> State_Latitudes;
+	std::vector< std::vector<double> > Rays;
+	std::vector<double> data(NDAT);
+	std::vector<double> order(NDAT); 
+	std::vector<double> s(NMON); 
+
+	// read the data from the file
+	read_tab2_data(Head, Mths, Cities, States, State_Averages, State_Latitudes, Rays);
+
+	// replace the solar flux in each column by rank order
+	for (j = 0; j < NMON; j++) {
+		for (i = 0; i < NDAT; i++) {
+			data[i] = Rays[i][j];
+			order[i] = i;
+		}
+		template_funcs::sort2(data, order);
+		statistic::crank(NDAT, data, &s[j]);
+		for (i = 0; i < NDAT; i++) {
+			Rays[(int)(0.5 + order[i])][j] = data[i];
+		}
+	}
+	std::cout << Head << "\n\n" << std::setw(16) <<" ";
+	for (i = 0; i < NMON; i++) {
+		std::cout << std::setw(5) << Mths[i]; 
+	}
+	std::cout << "\n\n";
+	for (i = 0; i < NDAT; i++) {
+		std::cout << Cities[i];
+		for (j = 0; j < NMON; j++) {
+			std::cout << std::setw(5) << (int)(0.5 + Rays[i][j]);
+		}
+		std::cout << "\n"; 
+	}
+}
+
+void testing::perform_kendall_test_1()
+{
+	// This program looks for pair correlations in five random number generators
+	// The data are of the same rank
+	// it tests for randomness by seeing if two consecutive numbers from the generator have a monotonic correlation
+	// RNG generate 200 pairs of random numbers, then kendl1 tests for correlation of the pairs
+	// A chart is made showing Kendall's tau, std. dev from null hypothesis and propability
+	// To improve the test increase NDAT and vary the seed value idum
+	// R. Sheehan 12 - 4 - 2018
+
+	int NDAT = 500; 
+	int i, j; 
+	double prob, tau, z; 
+
+	std::vector<std::string> txt = {"RAN0", "RAN1", "RAN2"}; //{"RAN0", "RAN1", "RAN2", "RAN3", "RAN4"};
+	std::vector<double> data1(NDAT); 
+	std::vector<double> data2(NDAT); 
+
+	// Look for correlations in "RAN0", "RAN1", "RAN2"
+	std::cout << "\nPair correlations of RAN0, RAN1, RAN2\n\n"; 
+	std::cout << std::setw(9) << "\nProgram" << std::setw(18) << "Kendall tau"; 
+	std::cout << std::setw(17) << "Deviation" << std::setw(19) << "Probability\n";
+	std::cout << std::fixed << std::setprecision(6); 
+	for (i = 0; i < 3; i++) {
+		long idum = (-1357); 
+		// generate pairs of random numbers using the different rng
+		for (j = 0; j < NDAT; j++) {
+			if (i == 0) {
+				data1[j] = rng::ran0(&idum);
+				data2[j] = rng::ran0(&idum);
+			}
+			else if(i == 1) {
+				data1[j] = rng::ran1(&idum);
+				data2[j] = rng::ran1(&idum);
+			}
+			else if (i == 2) {
+				data1[j] = rng::ran2(&idum);
+				data2[j] = rng::ran2(&idum);
+			}
+			else {
+				data1[j] = rng::ran2(&idum);
+				data2[j] = rng::ran2(&idum);
+			}
+		}
+		statistic::kendl1(data1, data2, NDAT, &tau, &z, &prob); 
+		std::cout << std::setw(8) << txt[i] << std::setw(18) << tau;
+		std::cout << std::setw(18) << z << std::setw(18) << prob<<"\n";
+	}
+}
+
+void testing::perform_kendall_test_2()
+{
+	// Program perform Kendall tau test on a contingency table of data of random bit sequences
+	// Contingency table is prepared inside the program
+	// Program checks the sequences by breakig them into groups of three bits each. Each group is treated as a 3-bit binary number
+	// Two consecutive groups then act as indices in an 8*8 contingency table that records how many times each possible sequence occurs
+	// For each random bit generator NDAT samples are taken. Kendall tau and associated probability are computed using kendl2
+	// Program is testing whether or not the 3-bit numbers tend to be followed by others of their own kind
+	// Roughly this program tests whether groups of ones or zeroes come in more groups than they should
+	// R. Sheehan 12 - 4 -2018
+
+	int NDAT = 1000, IP = 8, JP = 8; 
+	int ifunc, k, l, m, n, twoton; 
+	unsigned long iseed; 
+	double prob, tau, z; 
+
+	std::vector<std::string> txt = { "000", "001", "010", "011", "100", "101", "110", "111" };
+	std::vector< std::vector< double > > tab(IP); 
+	for (k = 0; k < IP; k++) {
+		std::vector<double> x(JP); 
+		tab[k] = x; 
+	}
+
+	// look for ones after zeroes in IRBIT1 and IRBIT2 sequences
+	std::cout << "Are ones followed by zeroes and vice-versa?\n"; 
+	std::cout << std::fixed << std::setprecision(6); 
+	for (ifunc = 0; ifunc < 2; ifunc++) {
+		iseed = 2468; 
+		
+		if (ifunc == 0) {
+			std::cout << "test of irbit1:\n"; 
+		}
+		else {
+			std::cout << "test of irbit2:\n"; 
+		}
+		
+		// zero the array holding the data
+		for (k = 0; k < IP; k++) {
+			for (l = 0; l < JP; l++) {
+				tab[k][l] = 0.0; 
+			}
+		}
+		
+		// Fill the array with data
+		for (m = 1; m <= NDAT; m++) {
+			k = 0; 
+			twoton = 1; 
+			for (n = 0; n < 3; n++) {
+				if (ifunc == 0) {
+					k += rng::irbit1(&iseed)*twoton; 
+				}
+				else {
+					k += rng::irbit2(&iseed)*twoton; 
+				}
+				twoton *= 2; 
+			}
+			l = 0; 
+			twoton = 1;
+			for (n = 0; n < 3; n++) {
+				if (ifunc == 0) {
+					l += rng::irbit1(&iseed)*twoton;
+				}
+				else {
+					l += rng::irbit2(&iseed)*twoton;
+				}
+				twoton *= 2;
+			}
+			++tab[k][l]; 
+		}
+		
+		// Compute Kentall tau statistic
+		statistic::kendl2(tab, IP, JP, &tau, &z, &prob);
+		
+		// print data to screen
+		std::cout << "    ";
+		for (n = 0; n < 8; n++) {
+			std::cout << std::setw(6) << txt[n];
+		}
+		std::cout << "\n"; 
+		for (n = 0; n < 8; n++) {
+			std::cout << std::setw(3) << txt[n]; 
+			for (m = 0; m < 8; m++)
+				std::cout << std::setw(6) << (int)(0.5 + tab[n][m]);
+			std::cout << "\n"; 
+		}
+		std::cout << "\n" << std::setw(17) << "Kendall tau:";
+		std::cout << std::setw(15) << "deviation" << std::setw(17) << "probability\n";
+		std::cout << std::setw(15) << tau << std::setw(16) << z; 
+		std::cout << std::setw(16) << prob << "\n\n";
 	}
 }

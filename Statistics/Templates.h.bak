@@ -33,19 +33,6 @@ namespace template_funcs{
 		return ((b)>(T)(0)?fabs(a):-fabs(a));
 	}
 
-	template <class T> void SWAP(T &a, T &b)
-	{
-		// Updated version of SWAP Macro
-
-		T itemp = (a); (a) = (b); (b) = itemp;
-	}
-
-	template <class T> void SHFT(T &a, T &b, T &c, T &d)
-	{
-		// Updated version of SHFT Macro
-		(a) = (b); (b) = (c); (c) = (d);
-	}
-
 	template <class T> std::string toString(const T & t)
 	{
 		// This is just too convenient not to use
@@ -98,36 +85,25 @@ namespace template_funcs{
 				// Store the data from vec1 and vec2 in Data
 				// vec1 and vec2 must have the same dimensions!
 				// vec1 corresponds to the first column, vec2 to the second
-				for (int i = 0; i < (int)(vec1.size()); i++) {
-					Data.push_back( std::make_pair( vec1[i], vec2[i] ) );
-				}
-
-				/*std::vector<T>::iterator it1 = vec1.begin(); 
-				std::vector<T>::iterator it2 = vec2.begin();*/ 
-				/*std::iterator<T> it1 = vec1.begin(); 
-				std::iterator<T> it2 = vec2.begin();*/
-				/*for(it1; it1 != vec1.end(); it1++){
+				std::vector<T>::iterator it1 = vec1.begin(); 
+				std::vector<T>::iterator it2 = vec2.begin(); 
+				for(it1; it1 != vec1.end(); it1++){
 					Data.push_back( std::make_pair(*it1, *it2) ); 
 					it2++; 
-				}*/
+				}
 
 				// sort the data using std::sort
 				// this will sort according to the data in the first element of the pair
 				// the same rearrangement will be applied to the data in the second element
 				std::sort(Data.begin(), Data.end()); 
 
-				// place the sorted data back into the original containers	
-				for (int i = 0; i < (int)(Data.size()); i++) {
-					vec1[i] = Data[i].first; vec2[i] = Data[i].second; 
-				}
-
-				//std::vector< std::pair<T,T> >::iterator pit = Data.begin(); 
-				/*std::iterator<T> pit = Data.begin(); 
+				// place the sorted data back into the original containers		
+				std::vector< std::pair<T,T> >::iterator pit = Data.begin(); 
 				int i=0; 
 				for(pit; pit != Data.end(); pit++){
 					vec1[i] = pit->first; vec2[i] = pit->second; 
 					i++; 
-				}*/
+				}
 
 				// no longer need Data
 				Data.clear(); 

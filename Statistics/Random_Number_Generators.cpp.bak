@@ -504,3 +504,58 @@ double rng::bnldev(double pp, int n, long *idum)
 		exit(EXIT_FAILURE); 
 	}
 }
+
+// Random bit sequence generators
+#define IB1 1
+#define IB2 2
+#define IB5 16
+#define IB18 131072
+
+int rng::irbit1(unsigned long *iseed)
+{
+	// Returns as an integer a random bit, based on the 18 low-significance bits in iseed (which is
+	// modified for the next call)
+	// See NRinC, sect 7.4
+
+	unsigned long newbit;
+
+	newbit = (*iseed & IB18) >> 17
+		^ (*iseed & IB5) >> 4
+		^ (*iseed & IB2) >> 1
+		^ (*iseed & IB1);
+	*iseed = (*iseed << 1) | newbit;
+	return (int)newbit;
+}
+
+#undef IB1
+#undef IB2
+#undef IB5
+#undef IB18
+
+#define IB1 1
+#define IB2 2
+#define IB5 16
+#define IB18 131072
+#define MASK (IB1+IB2+IB5)
+
+int rng::irbit2(unsigned long *iseed)
+{
+	// Returns as an integer a random bit, based on the 18 low-significance bits in iseed (which is
+	// modified for the next call).
+	// See NRinC, sect 7.4
+
+	if (*iseed & IB18) {
+		*iseed = ((*iseed ^ MASK) << 1) | IB1;
+		return 1;
+	}
+	else {
+		*iseed <<= 1;
+		return 0;
+	}
+}
+
+#undef MASK
+#undef IB18
+#undef IB5
+#undef IB2
+#undef IB1

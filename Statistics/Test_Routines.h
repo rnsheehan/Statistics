@@ -40,6 +40,26 @@ namespace testing{
 	void perform_kendall_test_1(); 
 
 	void perform_kendall_test_2(); 
+
+	void lin_fit_test(); 
+
+	void gaussj_test(); 
+
+	void funcs(double &x, std::vector<double> &afunc, int &ma); 
+
+	void fpoly(double &x, std::vector<double> &afunc, int &ma);
+
+	void fleg(double &x, std::vector<double> &afunc, int &ma);
+
+	void lst_sqr_test(); 
+
+	void fgauss(double x, std::vector<double> &a, double *y, std::vector<double> &dyda, int &na); 
+
+	void non_lin_fit_test(); 
+
+	void rng_test(); 
+
+	void monte_carlo_test(); 
 }
 
 #endif

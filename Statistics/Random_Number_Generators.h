@@ -6,6 +6,10 @@
 
 namespace rng{
 
+	long ranseed(); // generate a random seed value
+
+	int ranint(long *idum, int &low, int &high); // random integer in the range [low, high]
+
 	// uniformly distributed random number generators
 	double ran0(long *idum); // it is recommended that this should not be used
 	double ran1(long *idum); // this is the one most frequently used, period 1e8

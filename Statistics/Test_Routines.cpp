@@ -889,3 +889,541 @@ void testing::perform_kendall_test_2()
 		std::cout << std::setw(16) << prob << "\n\n";
 	}
 }
+
+void testing::lin_fit_test()
+{
+	// functions makes a linear fit to a set of data points with noise
+	// underlying model is linear of the form y = a + b x
+	// where a = +1 and b = -2, noise is assumed to be in y and not in x
+	// R. Sheehan 22 - 6 - 2018
+
+	int NPT = 100; 
+	double SPREAD = 1.0; 
+	int i, mwt = 0; 
+	long idum = (-117); 
+	double a, b, chi2, q, siga, sigb; 
+	std::vector<double> x(NPT, 0.0); 
+	std::vector<double> y(NPT, 0.0);
+	std::vector<double> sig(NPT, 0.0);
+
+	// fill the vectors with data
+	for (i = 0; i < NPT; i++) {
+		x[i] = 0.1*(i + 1); 
+		y[i] = -2.0*x[i] + 1.0 + SPREAD*rng::gasdev(&idum); 
+		sig[i] = SPREAD; 
+	}
+
+	// Compute the linear fits with / without assumed spread on y values
+	std::cout << std::fixed << std::setprecision(6); 
+	for (i = 0; i < 2; i++) {
+		// compute the linear fit parameters
+		fit::lin_fit(x, y, NPT, sig, mwt, &a, &b, &siga, &sigb, &chi2, &q); 
+
+		if (mwt)
+			std::cout << "\nIncluding standard deviations\n"; 
+		else
+			std::cout << "\nIgnoring standard deviations\n";
+		std::cout << std::setw(12) << "a = " << std::setw(10) << a; 
+		std::cout << std::setw(19) << "uncertainty: " << std::setw(10) << siga << "\n";
+		std::cout << std::setw(12) << "b = " << std::setw(10) << b;
+		std::cout << std::setw(19) << "uncertainty: " << std::setw(10) << sigb << "\n";
+		std::cout << std::setw(19) << "chi-squared = " << std::setw(15) << chi2 << "\n";
+		std::cout << std::setw(19) << "nu = " << std::setw(15) << NPT - 2 << "\n";
+		std::cout << std::setw(19) << "chi-squared / nu = " << std::setw(15) << chi2 / (NPT - 2) << "\n";
+		std::cout << std::setw(23) << "goodness-of-fit = " << std::setw(11) << q << "\n";
+		mwt++; 
+	}
+	std::cout << "\n"; 
+}
+
+void testing::gaussj_test()
+{
+	// Ensure the Gauss elimination scheme is working correctly
+	// R. Sheehan 22 - 6 - 2018
+
+	int nrows = 4, ncols = 4, ncolsb = 1; 
+	std::vector<std::vector<double>> A; 
+	std::vector<std::vector<double>> b;
+
+	A = lin_alg::array_2D(nrows, ncols); 
+	b = lin_alg::array_2D(nrows, ncolsb);
+
+	// Fill the matrix A
+	A[0][0] = 1; A[0][1] = -1; A[0][2] = 2; A[0][3] = -1; 
+	A[1][0] = 2; A[1][1] = -2; A[1][2] = 3; A[1][3] = -3;
+	A[2][0] = 1; A[2][1] =  1; A[2][2] = 1; A[2][3] = 0;
+	A[3][0] = 1; A[3][1] = -1; A[3][2] = 4; A[3][3] = 3;
+
+	// Fill the vector B
+	b[0][0] = -8; 
+	b[1][0] = -20; 
+	b[2][0] = -2; 
+	b[3][0] = 4;
+
+	std::cout << "Matrix A is\n";
+	for (int i = 0; i < nrows; i++) {
+		for (int j = 0; j < ncols; j++)
+			std::cout << A[i][j] << " ";
+		std::cout << "\n";
+	}
+	std::cout << "\nVector b is\n";
+	for (int i = 0; i < nrows; i++) {
+		std::cout << b[i][0] << "\n";
+	}
+
+	lin_alg::gaussj(A, nrows, b, ncolsb); 
+
+	std::cout << "\nInverse of A is\n"; 
+	for (int i = 0; i < nrows; i++) {
+		for (int j = 0; j < ncols; j++)
+			std::cout << A[i][j] << " "; 
+		std::cout << "\n"; 
+	}
+	std::cout << "\nSolution of system of equations is\n";
+	for (int i = 0; i < nrows; i++) {
+		std::cout << b[i][0] << "\n";
+	}
+
+	A.clear(); b.clear(); 
+}
+
+void testing::funcs(double &x, std::vector<double> &afunc, int &ma)
+{
+	// function for producing sample basis function which can be used to fit data
+	// 
+	try {
+		if (ma > 2 && ma == (int)(afunc.size())) {
+			int i;
+			afunc[0] = 1.0;
+			afunc[1] = x;
+			for (i = 2; i < ma; i++) afunc[i] = sin((i + 1)*x);
+		}
+		else{
+			std::string reason = "Error: testing::funcs()\n"; 
+			reason += "ma = " + template_funcs::toString(ma) + ", afuncs.size() == " + template_funcs::toString(afunc.size()) + "\n"; 
+			throw std::runtime_error(reason); 
+		}
+	}
+	catch (std::runtime_error &e) {
+		std::cerr << e.what(); 
+	}
+}
+
+void testing::fpoly(double &x, std::vector<double> &afunc, int &ma)
+{
+	// General polynomial with known coefficients	
+	try {		
+		if (ma > 2 && ma == (int)(afunc.size())) {
+			int j;
+			afunc[0] = 1.0;
+			for (j = 1; j < ma; j++) afunc[j] = afunc[j - 1] * x;
+		}
+		else {
+			std::string reason = "Error: testing::fpoly()\n";
+			reason += "ma = " + template_funcs::toString(ma) + ", afuncs.size() == " + template_funcs::toString(afunc.size()) + "\n";
+			throw std::runtime_error(reason);
+		}
+	}
+	catch (std::runtime_error &e) {
+		std::cerr << e.what();
+	}
+}
+
+void testing::fleg(double &x, std::vector<double> &afunc, int &ma)
+{
+	// Compute coefficients of legendre polynomial using recurrence relation
+
+	try {
+		if (ma > 2 && ma == (int)(afunc.size())) {
+			int j;
+			double twox, f2, f1, d; 
+			afunc[0] = 1.0;
+			afunc[1] = x; 
+			twox = 2.0*x; 
+			f2 = x; 
+			d = 1.0; 
+			for (j = 2; j < ma; j++) { 
+				f1 = d++; 
+				f2 += twox; 
+				afunc[j] = (f2*afunc[j-1]-f1*afunc[j-2]) / d;
+			}
+		}
+		else {
+			std::string reason = "Error: testing::fleg()\n";
+			reason += "ma = " + template_funcs::toString(ma) + ", afuncs.size() == " + template_funcs::toString(afunc.size()) + "\n";
+			throw std::runtime_error(reason);
+		}
+	}
+	catch (std::runtime_error &e) {
+		std::cerr << e.what();
+	}
+}
+
+void testing::lst_sqr_test()
+{
+	// Make a polynomial fit to a set of data
+	// 
+	int i, j, NPT = 100, NTERM = 5, nu = NPT - NTERM; 
+	double SPREAD = 0.1, chisq, q; 
+	long idum = (-911); 
+
+	std::vector<int> ia(NTERM); 
+	std::vector<double> a(NTERM), x(NPT), y(NPT), sig(NPT); 
+	std::vector<std::vector<double>> covar = lin_alg::array_2D(NTERM, NTERM);
+
+	// Generate data for the fit
+	for (i = 0; i < NPT; i++) {
+		x[i] = 0.1*(i + 1); 
+		funcs(x[i], a, NTERM); 
+		y[i] = 0.0; 
+		for (j = 0; j < NTERM; j++) y[i] += (j + 1)*a[j]; 
+		y[i] += SPREAD * rng::gasdev(&idum); 
+		sig[i] = SPREAD; 
+	}
+
+	// store which parameters are to be fitted
+	for (i = 0; i < NTERM; i++) ia[i] = 1; 
+
+	// perform least squares fit
+	fit::lfit(x, y, sig, NPT, a, ia, NTERM, covar, &chisq, funcs); 
+
+	q = probability::gammq(0.5*nu, 0.5*(chisq)); // goodness of fit
+
+	// output results
+	std::cout << "\n" << std::setw(11) << "parameter"; 
+	std::cout << std::setw(22) << "uncertainty\n"; 
+	std::cout << std::fixed << std::setprecision(6); 
+	for (i = 0; i < NTERM; i++) {
+		std::cout << "a[" << i << "] = " << std::setw(8) << a[i]; 
+		std::cout << std::setw(13) << sqrt(covar[i][i]) << "\n"; 
+	}
+	std::cout << "chi-squared = " << std::setw(12) << chisq << "\n";
+	std::cout << "nu = " << nu << "\n"; 
+	std::cout << "chi_squared / nu = " << chisq / nu << "\n";
+	std::cout << "goodness-of-fit = " << q << "\n\n"; 
+	std::cout << "full covariance matrix\n";
+	std::cout << std::scientific << std::setprecision(4); 
+	for (i = 0; i < NTERM; i++) {
+		for (j = 0; j < NTERM; j++)
+			std::cout << std::setw(15) << covar[i][j]; 
+		std::cout << "\n"; 
+	}
+
+	std::cout << "\nCheck the results of restricting the fit parameters...\n"; 
+
+	// Check the results of restricting the fit parameters
+
+	// store which parameters are to be fitted
+	for (i = 1; i < NTERM; i+=2) ia[i] = 0;
+
+	// perform least squares fit
+	fit::lfit(x, y, sig, NPT, a, ia, NTERM, covar, &chisq, funcs);
+
+	nu = NPT - 3;
+	q = probability::gammq(0.5*nu, 0.5*(chisq)); // goodness of fit
+
+	// output results
+	std::cout << "\n" << std::setw(11) << "parameter";
+	std::cout << std::setw(22) << "uncertainty\n";
+	std::cout << std::fixed << std::setprecision(6);
+	for (i = 0; i < NTERM; i++) {
+		std::cout << "a[" << i << "] = " << std::setw(8) << a[i];
+		std::cout << std::setw(13) << sqrt(covar[i][i]) << "\n";
+	}
+	std::cout << "chi-squared = " << std::setw(12) << chisq << "\n";
+	std::cout << "nu = " << nu << "\n";
+	std::cout << "chi_squared / nu = " << chisq / nu << "\n";
+	std::cout << "goodness-of-fit = " << q << "\n\n";
+	std::cout << "full covariance matrix\n";
+	std::cout << std::scientific << std::setprecision(4);
+	for (i = 0; i < NTERM; i++) {
+		for (j = 0; j < NTERM; j++)
+			std::cout << std::setw(15) << covar[i][j];
+		std::cout << "\n";
+	}
+	std::cout << "\n";
+}
+
+void testing::fgauss(double x, std::vector<double> &a, double *y, std::vector<double> &dyda, int &na)
+{
+	// y(x;a) is the sum of na/3 Gaussians. The amplitude, centre and width of the Gaussians are stored in a
+	// a[i] = amp_{k}, a[i+1] = centre_{k}, a[i+2] = width_{k}
+	// Dimensions of the arrays are a[0..na-1], dyda[0..na-1]
+	// k = 1..na/3
+
+	try {
+		int i;
+		double fac, ex, arg;
+
+		*y = 0.0;
+		for (i = 0; i < na - 1; i += 3) {
+			arg = (x - a[i + 1]) / a[i + 2];
+			ex = exp(-arg * arg);
+			fac = a[i] * ex*2.0*arg;
+			*y += a[i] * ex;
+			dyda[i] = ex;
+			dyda[i + 1] = fac / a[i + 2];
+			dyda[i + 2] = fac * arg / a[i + 2];
+		}
+	}
+	catch (std::invalid_argument &e) {
+		std::cerr << e.what();
+	}
+}
+
+void testing::non_lin_fit_test()
+{
+	// routine which determines if the Levenberg-Margquardt method has been implemented correctly
+	// R. Sheehan 13 - 7 - 2018
+
+	// Going to use the multi-peak Gaussian with noise as the test program
+
+	// Can you update this code to provide an estimate of the error associated with each fit parameter? 
+	// R. Sheehan 14 - 11 - 2019
+
+	// Generate data to use in the fit process
+	int npts, npars; 
+	long idum = (-1011); 
+	double spread, xlow, xhigh, deltax, xpos, yval;
+
+	xlow = 0.0; xhigh = 10.0; deltax = 0.02; 
+	npts = (int)( 1.0 + ( (xhigh - xlow) / deltax) ); 
+
+	std::vector<double> xdata(npts, 0.0); 
+	std::vector<double> ydata(npts, 0.0);
+	std::vector<double> sigdata(npts, 0.0);
+
+	npars = 6; 
+	std::vector<double> a(npars, 0.0); 
+	
+	std::vector<double> dyda(npars, 0.0);
+
+	// data stored in array a in the form a[i] = amp_{k}, a[i+1] = centre_{k}, a[i+2] = width_{k}
+	a[0] = 5.0; a[1] = 2.0; a[2] = 3.0; // Gaussian 1
+	a[3] = 3.0; a[4] = 5.0; a[5] = 1.0; // Gaussian 2
+
+	spread = 0.01; 
+	xpos = xlow; 
+	for (int i = 0; i < npts; i++) {
+
+		fgauss(xpos, a, &yval, dyda, npars); // evaluate the Gaussian function
+
+		xdata[i] = xpos;
+
+		yval *= rng::gasdev1(&idum, 1.0, template_funcs::DSQR(spread)); // add noise to the signal value
+
+		ydata[i] = yval;
+
+		sigdata[i] = spread * yval;
+
+		xpos += deltax;
+	}
+
+	// Perform the best it search for the data set
+	int ITMAX = 10; 
+
+	double TOL = 0.001; 
+	double chisq = 0.0; 
+
+	// Declare the necessary arrays
+	std::vector<std::vector<double>> covar = lin_alg::array_2D(npars, npars); 
+	std::vector<std::vector<double>> alpha = lin_alg::array_2D(npars, npars);
+
+	// define the initial guesses to the parameters to be determined
+	std::vector<double> a_guess(npars, 0.0);
+	std::vector<int> ia(npars, 1); // tell the algorithm that you want to locate all parameters 
+
+	// Good guesses
+	/*a_guess[0] = 4.5; a_guess[1] = 2.2; a_guess[2] = 2.8;
+	a_guess[3] = 2.5; a_guess[4] = 4.3; a_guess[5] = 1.4;*/
+
+	// Bad guesses
+	/*a_guess[0] = 4.0; a_guess[1] = -2.2; a_guess[2] = 1.8;
+	a_guess[3] = 0.5; a_guess[4] = -3.3; a_guess[5] = 0.4;*/
+
+	// Can you add something that tells the user that the fit is good or bad?
+	// How to interpret the chisq value correctly in terms of goodness of fit?
+
+	// Find three parameters
+	//ia[0] = 0; ia[1] = 0; ia[2] = 0; 
+	//a_guess[0] = 5.0; a_guess[1] = 2.0; a_guess[2] = 3.0; // these parameters are fixed
+	//ia[3] = 1; ia[4] = 1; ia[5] = 1;
+	//a_guess[3] = 2.5; a_guess[4] = 4.3; a_guess[5] = 1.4; // these are the guesses for the parameters being sought
+
+	// Find four parameters
+	ia[0] = 0; ia[1] = 1; ia[2] = 1;
+	a_guess[0] = 5.0; a_guess[1] = 1.4; a_guess[2] = 3.2; // these parameters are fixed
+	ia[3] = 1; ia[4] = 0; ia[5] = 1;
+	a_guess[3] = 2.5; a_guess[4] = 5.0; a_guess[5] = 1.4; // these are the guesses for the parameters being sought
+
+	// Find two parameters
+	/*ia[0] = 1; ia[1] = 0; ia[2] = 0;
+	a_guess[0] = 4.0; a_guess[1] = 2.0; a_guess[2] = 3.0; 
+	ia[3] = 1; ia[4] = 0; ia[5] = 0;
+	a_guess[3] = 2.5; a_guess[4] = 5.0; a_guess[5] = 1.0;*/ 
+
+	// Find one parameters
+	/*ia[0] = 0; ia[1] = 1; ia[2] = 0;
+	a_guess[0] = 5.0; a_guess[1] = 1.5; a_guess[2] = 3.0;
+	ia[3] = 0; ia[4] = 0; ia[5] = 0;
+	a_guess[3] = 3.0; a_guess[4] = 5.0; a_guess[5] = 1.0;*/
+
+	fit::non_lin_fit(xdata, ydata, sigdata, npts, a_guess, ia, npars, covar, alpha, &chisq, fgauss, ITMAX, TOL, true); 
+
+	xdata.clear(); ydata.clear(); sigdata.clear(); 
+	a_guess.clear(); ia.clear(); covar.clear(); alpha.clear(); 
+	a.clear(); 
+}
+
+void testing::rng_test()
+{
+	// Examine the values of uniform random numbers generated by the RNG
+	// Want to use this in the MC simulations
+	// R. Sheehan 25 - 11 - 2019
+
+	// Use current time information to generate seed value for rng
+	time_t rawtime;
+
+	time(&rawtime);
+
+	int max, min, diff; 
+
+	min = 7; max = 27; diff = max - min; // use these values to scale the RN to a certain range of integers
+
+	long idum = rng::ranseed();
+	// generate pairs of random numbers using the different rng
+	for (int i = 0; i < 10; i++) {
+		double RN = rng::ran1(&idum); 
+		std::cout << min + diff * RN << " , " << std::round(min+diff*RN) << "\n";
+	}
+	std::cout << "\n"; 
+
+	min = -7; max = -27; diff = max - min; // use these values to scale the RN to a certain range of integers
+
+	idum = (-static_cast<long>(rawtime));
+	// generate pairs of random numbers using the different rng
+	for (int i = 0; i < 10; i++) {
+		double RN = rng::ran1(&idum);
+		std::cout << min + diff * RN << " , " << std::round(min + diff * RN) << "\n";
+	}
+	std::cout << "\n";
+
+	max = 7; min = 0; 
+
+	// generate pairs of random numbers using the different rng
+	for (int i = 0; i < 11; i++) {
+		std::cout << rng::ranint(&idum, min, max) << "\n";
+	}
+	std::cout << "\n";
+}
+
+void testing::monte_carlo_test()
+{
+	// Examine the monte-carlo method for estimating confidence limits on parameter estimates
+	// R. Sheehan 25 - 11 - 2019
+
+	// Use same example as before
+
+	// Use current time information to generate seed value for rng
+	time_t rawtime;
+
+	time(&rawtime);
+
+	// Generate data to use in the fit process
+	int npts, npars;
+	long idum = (-static_cast<long>(rawtime));
+	double spread, xlow, xhigh, deltax, xpos, yval;
+
+	xlow = 0.0; xhigh = 10.0; deltax = 0.1;
+	npts = (int)(1.0 + ((xhigh - xlow) / deltax));
+
+	std::vector<double> xdata(npts, 0.0);
+	std::vector<double> ydata(npts, 0.0);
+	std::vector<double> sigdata(npts, 0.0);
+
+	npars = 6;
+	std::vector<double> a(npars, 0.0);
+
+	std::vector<double> dyda(npars, 0.0);
+
+	// data stored in array a in the form a[i] = amp_{k}, a[i+1] = centre_{k}, a[i+2] = width_{k}
+	a[0] = 5.0; a[1] = 2.0; a[2] = 3.0; // Gaussian 1
+	a[3] = 3.0; a[4] = 5.0; a[5] = 1.0; // Gaussian 2
+
+	spread = 0.1;
+	xpos = xlow;
+	for (int i = 0; i < npts; i++) {
+
+		fgauss(xpos, a, &yval, dyda, npars); // evaluate the Gaussian function
+
+		xdata[i] = xpos;
+
+		yval *= rng::gasdev1(&idum, 1.0, template_funcs::DSQR(spread)); // add noise to the signal value
+
+		ydata[i] = yval;
+
+		sigdata[i] = spread * yval;
+
+		xpos += deltax;
+	}
+
+	a.clear(); // Don't need this anymore
+
+	// Compute the estimate of the best fit to the data
+	int ITMAX = 10;
+
+	double TOL = 0.001;
+	double chisq = 0.0;
+
+	// Declare the necessary arrays
+	std::vector<std::vector<double>> covar = lin_alg::array_2D(npars, npars);
+	std::vector<std::vector<double>> alpha = lin_alg::array_2D(npars, npars);
+
+	// define the initial guesses to the parameters to be determined
+	std::vector<double> a_guess(npars, 0.0);
+	std::vector<double> a_guess_again(npars, 0.0); 
+	std::vector<int> ia(npars, 1); // tell the algorithm that you want to locate all parameters 
+
+	// Good guesses
+	a_guess[0] = 4.5; a_guess[1] = 2.2; a_guess[2] = 2.8;
+	a_guess[3] = 2.5; a_guess[4] = 4.3; a_guess[5] = 1.4;
+
+	fit::non_lin_fit(xdata, ydata, sigdata, npts, a_guess, ia, npars, covar, alpha, &chisq, fgauss, ITMAX, TOL, true);
+
+	/*xdata.clear(); ydata.clear(); sigdata.clear();
+	a_guess.clear(); ia.clear(); covar.clear(); alpha.clear();*/
+
+	// Generate a random sample of the underlying data
+	int nsmpl = static_cast<int>(0.9*npts); 
+	std::vector<double> xs(nsmpl, 0.0);
+	std::vector<double> ys(nsmpl, 0.0);
+	std::vector<double> sigs(nsmpl, 0.0);
+	std::vector<double> params(npars, 0.0);
+	std::vector<double> errors(npars, 0.0);
+
+	int ntest = 11; 
+
+	for (int k = 0; k < ntest; k++) {
+
+		fit::random_sample(xdata, ydata, sigdata, npts, xs, ys, sigs, nsmpl);
+
+		// Perform a fit on the sampled data
+		a_guess_again[0] = 4.5; a_guess_again[1] = 2.2; a_guess_again[2] = 2.8;
+		a_guess_again[3] = 2.5; a_guess_again[4] = 4.3; a_guess_again[5] = 1.4;
+
+		fit::non_lin_fit(xs, ys, sigs, nsmpl, a_guess_again, ia, npars, covar, alpha, &chisq, fgauss, ITMAX, TOL);
+
+		for (int m = 0; m < npars; m++) {
+			//std::cout << "da[" << m << "] = " << a_guess[m] - a_guess_again[m] << "\n";
+			params[m] += a_guess_again[m];
+			errors[m] += (a_guess[m] - a_guess_again[m]);
+		}
+		//std::cout << "\n";
+	}
+
+	std::cout << "Averaged Parameters with Errors from Monte-Carlo Sampling\n"; 
+	for (int j = 0; j < npars; j++) {
+		std::cout << "a[" << j << "] = " << params[j]/(ntest) << " +/- " << fabs(errors[j]/(ntest)) << "\n";
+	}
+
+}

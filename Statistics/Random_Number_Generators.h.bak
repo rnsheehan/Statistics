@@ -27,6 +27,10 @@ namespace rng{
 
 	// Binomially distributed random number generator
 	double bnldev(double pp, int n, long *idum); 
+
+	// Random bit sequence generators
+	int irbit1(unsigned long *iseed); 
+	int irbit2(unsigned long *iseed); 
 }
 
 #endif

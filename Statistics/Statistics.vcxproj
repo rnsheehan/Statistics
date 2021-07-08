@@ -77,6 +77,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Attach.h" />
+    <ClInclude Include="Fitting_Functions.h" />
+    <ClInclude Include="Linear_Algebra.h" />
+    <ClInclude Include="Mathematical_Methods.h" />
     <ClInclude Include="Probability_Functions.h" />
     <ClInclude Include="Random_Number_Generators.h" />
     <ClInclude Include="Statistical_Functions.h" />
@@ -85,7 +88,10 @@
     <ClInclude Include="Useful.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="FittingFunctions.cpp" />
+    <ClCompile Include="Linear_Algebra.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Mathematical_Methods.cpp" />
     <ClCompile Include="Probability_Functions.cpp" />
     <ClCompile Include="Random_Number_Generators.cpp" />
     <ClCompile Include="Statistical_Functions.cpp" />

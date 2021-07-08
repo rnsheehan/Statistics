@@ -5,6 +5,40 @@
 // Implementation of the RNG taken from NRinC, ch 7
 // R. Sheehan 7 - 9 - 2017
 
+long rng::ranseed()
+{
+	// Use current time information to generate seed value for rng
+	time_t rawtime;
+
+	time(&rawtime);
+
+	return static_cast<long>(-rawtime); 
+}
+
+int rng::ranint(long *idum, int &low, int &high)
+{
+	// Return a random integer in the range [low, high]
+	// R. Sheehan 25 - 11 - 2019
+
+	try {
+		if (abs(high) > abs(low)) {			
+			// Use current time information to generate seed value for rng
+			
+			return static_cast<int>( std::round(low + (high - low) * rng::ran1(idum) ) );
+		}
+		else {
+			std::string reason;
+			reason = "Error: int rng::ranint(int &low, int &high)\n";
+			reason += "Invalid Input Values\n";
+			throw std::invalid_argument(reason);
+		}
+	}
+	catch (std::invalid_argument &e) {
+		useful_funcs::exit_failure_output(e.what());
+		exit(EXIT_FAILURE);
+	}
+}
+
 // constants needed for ran0, ran1
 #define IA 16807
 #define IM 2147483647

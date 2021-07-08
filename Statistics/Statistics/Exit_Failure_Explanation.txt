@@ -1,7 +1,0 @@
-Program Exit Explanation
-
-Error occurred: Fri Nov 22 15:10:00 2019
-
-Error: void lin_alg::gaussj()
-Input array dimensions are not correct
-

@@ -23,21 +23,25 @@ void sort2_test();
 //void sort2(std::vector<double> &arr1, std::vector<double> &arr2); 
 //void test_func(std::vector<double> &name); 
 
+void sand_box(); 
+
 int main()
 {
+	//sand_box(); 
+
 	//testing::compute_moments(); 
 
-	//testing::perform_t_test_diff_mean_same_var(); 
+	//testing::t_test_diff_mean_same_var(); 
 
-	//testing::perform_t_test_diff_mean_diff_var(); 
+	//testing::t_test_diff_mean_diff_var(); 
 
-	//testing::perform_f_test_diff_mean_diff_var(); 
+	//testing::f_test_diff_mean_diff_var(); 
 
-	testing::perform_chsone_test(); 
+	//testing::chsone_test(); 
 
-	//testing::perform_ksone_test(); 
+	//testing::ksone_test(); 
 
-	//testing::perform_kstwo_test();
+	//testing::kstwo_test();
 
 	//sort2_test(); 
 
@@ -64,17 +68,29 @@ int main()
 	//std::string test = "Testing the string\n"; 
 	//if(!(test.find("xyz") != std::string::npos)) std::cout<<test; 
 
-	//testing::perform_con_tab_test(); 
+	//testing::con_tab_test(); 
 
-	//testing::perform_pearson_test(); 
+	//testing::pearson_test(); 
 
-	//testing::perform_spearman_test(); 
+	//testing::spearman_test(); 
 
 	//testing::rank_order_test(); 
 
-	//testing::perform_kendall_test_1(); 
+	//testing::kendall_test_1(); 
 
-	//testing::perform_kendall_test_2();
+	//testing::kendall_test_2();
+
+	//testing::lin_fit_test(); 
+
+	//testing::gaussj_test(); 
+
+	//testing::lst_sqr_test(); 
+
+	testing::non_lin_fit_test();
+
+	//testing::rng_test(); 
+
+	//testing::monte_carlo_test(); 
 	
 	std::cout<<"Press enter to close console\n";
 	std::cin.get(); 
@@ -195,6 +211,27 @@ void sort2_test()
 
 
 	data1.clear(); data2.clear(); Data.clear(); 
+}
+
+void sand_box()
+{
+	/*bool c1 = false; 
+	bool c2 = true; 
+
+	if (c1) std::cout << "c1 is true\n"; 
+	if (!c1) std::cout << "c1 is false\n"; 
+	if (c2) std::cout << "c2 is true\n";
+	if (!c2) std::cout << "c2 is false\n";*/
+
+	int rows = 9; 
+	int cols = 7; 
+	std::vector<std::vector<double>> X; 
+
+	X = lin_alg::array_2D(rows, cols); 
+
+	std::pair<int, int> test = lin_alg::array_2D_size(X); 
+
+	X.clear();
 }
 
 //void sort2(std::vector<double> &arr1, std::vector<double> &arr2)

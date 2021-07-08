@@ -21,7 +21,7 @@ void Gamm_Test();
 void sort_test();
 void sort2_test(); 
 //void sort2(std::vector<double> &arr1, std::vector<double> &arr2); 
-void test_func(std::vector<double> &name); 
+//void test_func(std::vector<double> &name); 
 
 int main()
 {
@@ -33,7 +33,7 @@ int main()
 
 	//testing::perform_f_test_diff_mean_diff_var(); 
 
-	//testing::perform_chsone_test(); 
+	testing::perform_chsone_test(); 
 
 	//testing::perform_ksone_test(); 
 
@@ -68,7 +68,13 @@ int main()
 
 	//testing::perform_pearson_test(); 
 
-	testing::perform_spearman_test(); 
+	//testing::perform_spearman_test(); 
+
+	//testing::rank_order_test(); 
+
+	//testing::perform_kendall_test_1(); 
+
+	//testing::perform_kendall_test_2();
 	
 	std::cout<<"Press enter to close console\n";
 	std::cin.get(); 

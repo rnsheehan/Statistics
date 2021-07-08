@@ -21,6 +21,7 @@
 
 #include <cmath>
 #include <vector>
+#include <iterator>
 
 #include <algorithm>
 
@@ -36,10 +37,12 @@ static const double PI_6=((2.0/3.0)*p); // pi / 6
 
 #include "Templates.h"
 #include "Useful.h"
-
+#include "Mathematical_Methods.h"
+#include "Linear_Algebra.h"
 #include "Random_Number_Generators.h"
 #include "Probability_Functions.h"
 #include "Statistical_Functions.h"
+#include "Fitting_Functions.h"
 #include "Test_Routines.h"
 
 #endif

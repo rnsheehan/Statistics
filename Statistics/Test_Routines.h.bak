@@ -35,9 +35,11 @@ namespace testing{
 
 	void perform_spearman_test(); 
 
-	//void perform_kendall_test_1(); 
+	void rank_order_test(); 
 
-	//void perform_kendall_test_2(); 
+	void perform_kendall_test_1(); 
+
+	void perform_kendall_test_2(); 
 }
 
 #endif
