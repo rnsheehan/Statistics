@@ -1427,3 +1427,111 @@ void testing::monte_carlo_test()
 	}
 
 }
+
+void testing::diode_voltage(double x, std::vector<double>& a, double* y, std::vector<double>& dyda, int& na)
+{
+	// function that computes the diode voltage for input current x = I [mA]
+	// a stores diode parameters a = { eta, T, Is }
+	// a[0] = eta, a[1] = T, a[2] = Is
+	// diode voltage value is given by *y
+	// dyda is array that stores value of derivative of diode voltage function wrt each parameter in a
+	// Dimensions of the arrays are a[0..na-1], dyda[0..na-1]
+	// na is no. parameters
+	// R. Sheehan 19 - 10 - 2021
+
+	try {
+		double Tkelvin = 273.15 + a[1]; // convert temperature to Kelvin and multiply by ( k_{B} / q )
+		double Tterm = 8.61733e-5 * Tkelvin; 
+		double Iratio = (x / a[2]); 
+		double arg = 1.0 + Iratio; // compute term I_{d} / I_{s}
+		*y = a[0] * Tterm * log(arg); // eta * Tterm * log ( 1 + I_{d} / I_{s} )
+		dyda[0] = *y / a[0]; // \partial V_{d} / \partial \eta
+		dyda[1] = *y / Tkelvin; // \partial V_{d} / \partial T
+		dyda[2] = (-1.0 * a[0] * Tterm * Iratio) / (a[2] * arg); // \partial V_{d} / I_{s}
+	}
+	catch (std::invalid_argument& e) {
+		std::cerr << e.what();
+	}
+}
+
+void testing::diode_voltage_data_fit()
+{
+	// Apply LM method to measured diode voltage data
+	// R. Sheehan 19 - 10 - 2021
+
+	double eta = 1.5; // diode ideality (unitless)
+	double T = 22; // diode temperature (Celcius )
+	double Is = 5e-10; // diode saturation current (mA)
+	double Id = 50; // diode current (mA)
+	double y = 0.0; //computed voltage value
+
+	int npars = 3;
+	std::vector<double> a(npars, 0.0);
+	std::vector<double> dyda(npars, 0.0);
+
+	// Initial guesses for the parameters
+	a[0] = eta; a[1] = T; a[2] = Is;
+
+	testing::diode_voltage(Id, a, &y, dyda, npars);
+
+	std::cout << "Diode Fit Test Evaluation\n"; 
+	std::cout << "Diode current value: " << Id << " mA\n"; 
+	std::cout << "Diode voltage value: " << y << " V\n"; 
+	std::cout << "Der wrt eta: " << dyda[0] << "\n"; 
+	std::cout << "Der wrt T: " << dyda[1] << "\n"; 
+	std::cout << "Der wrt Is: " << dyda[2] << "\n\n"; 
+	std::cout << "Diode Equation Fit\n"; 
+
+	// Generate data to use in the fit process
+	int npts;
+	long idum = (-1011);
+	double spread, xlow, xhigh, deltax, xpos, yval;
+
+	xlow = 0.0; xhigh = 100.0; deltax = 0.45;
+	npts = (int)(1.0 + ((xhigh - xlow) / deltax));
+
+	std::vector<double> xdata(npts, 0.0);
+	std::vector<double> ydata(npts, 0.0);
+	std::vector<double> sigdata(npts, 0.0);
+
+	spread = 0.02; // variance of the noise being added to the signal
+	xpos = xlow;
+	for (int i = 0; i < npts; i++) {
+
+		diode_voltage(xpos, a, &yval, dyda, npars); // evaluate the diode-voltage function
+
+		xdata[i] = xpos;
+
+		yval *= rng::gasdev1(&idum, 1.0, template_funcs::DSQR(spread)); // add noise to the signal value
+
+		ydata[i] = yval;
+
+		sigdata[i] = fabs(yval) > 0.0 ? spread * yval : spread; // sigdata cannot have zero values
+
+		xpos += deltax;
+	}
+
+	// Perform the best it search for the data set
+	int ITMAX = 10;
+
+	double TOL = 0.001;
+	double chisq = 0.0;
+
+	// Declare the necessary arrays
+	std::vector<std::vector<double>> covar = lin_alg::array_2D(npars, npars);
+	std::vector<std::vector<double>> alpha = lin_alg::array_2D(npars, npars);
+
+	// define the initial guesses to the parameters to be determined
+	std::vector<double> a_guess(npars, 0.0);
+	std::vector<int> ia(npars, 1); // tell the algorithm that you want to locate all parameters 
+
+	ia[1] = 0; // search for params 0 and 2, fix param 1 value
+	a_guess[0] = 1.4; a_guess[1] = 22.0; a_guess[2] = 4e-10; // initial guesses for the parameters
+
+	// run the fitting algorithm
+	fit::non_lin_fit(xdata, ydata, sigdata, npts, a_guess, ia, npars, covar, alpha, &chisq, diode_voltage, ITMAX, TOL, true);
+
+	xdata.clear(); ydata.clear(); sigdata.clear();
+	a_guess.clear(); ia.clear(); covar.clear(); alpha.clear();
+	a.clear();
+}

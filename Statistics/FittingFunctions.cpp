@@ -243,6 +243,9 @@ void fit::non_lin_fit(std::vector<double> &x, std::vector<double> &y, std::vecto
 	// Feeling pleased
 	// R. Sheehan 22 - 11 - 2019
 
+	// sig cannot contain any zeroes, all elements must be strictly non-zero!
+	// R. Sheehan 19 - 10 - 2021
+
 	try {
 		bool c1 = ndata > 3 ? true : false;
 		bool c2 = (int)(x.size()) == ndata ? true : false;
@@ -547,6 +550,8 @@ void fit::mrqcof(std::vector<double> &x, std::vector<double> &y, std::vector<dou
 			for (j = 1; j < mfit; j++)
 				for (k = 0; k<j; k++) alpha[k][j] = alpha[j][k];
 
+			//lin_alg::array_2d_print(alpha); 
+
 			dyda.clear();
 		}
 		else {
@@ -573,7 +578,7 @@ void fit::goodness_of_fit()
 	// To characterise a fit as good
 	// nu = no. data points - no. fit parameters
 	// chi^{2} / nu ~ 1
-	// q = gammq(nu/2, chi^{2}/2) >= 0.1
+	// q = gammq(nu/2, chi^{2}/2) >= 0.1 // // goodness of fit probability
 	// R^{2} ~ 1
 }
 

@@ -60,6 +60,10 @@ namespace testing{
 	void rng_test(); 
 
 	void monte_carlo_test(); 
+
+	void diode_voltage(double x, std::vector<double>& a, double* y, std::vector<double>& dyda, int& na);
+
+	void diode_voltage_data_fit(); 
 }
 
 #endif
