@@ -21,6 +21,7 @@
 
 #include <cmath>
 #include <vector>
+#include <complex>
 #include <iterator>
 
 #include <algorithm>
@@ -34,10 +35,22 @@ static const double PI_3=((4.0/3.0)*p); // pi / 3
 static const double PI_4=(p); // pi / 4
 static const double PI_5=((4.0/5.0)*p); // pi / 5
 static const double PI_6=((2.0/3.0)*p); // pi / 6 
+static const double EPS = 1.0e-12;
+static const double TINY = 1.0e-20;
+
+static const int MAX_PATH_LENGTH = 250; // max. length for a directory in Windows OS
+
+static const std::string empty_str = "";
+static const std::string dottxt = ".txt";
+
+static const std::complex<double> zero(0.0, 0.0);
+static const std::complex<double> eye(0.0, 1.0);
+static const std::complex<double> one(1.0, 0.0);
 
 #include "Templates.h"
 #include "Useful.h"
 #include "Mathematical_Methods.h"
+#include "Vector_Utils.h"
 #include "Linear_Algebra.h"
 #include "Random_Number_Generators.h"
 #include "Probability_Functions.h"

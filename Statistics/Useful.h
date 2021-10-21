@@ -12,6 +12,8 @@ namespace useful_funcs{
 
 	void read_into_vector(std::string &filename, std::vector<double> &data, int &n_pts, bool loud = false); 
 
+	bool valid_filename_length(const std::string& name);
+
 }
 
 #endif

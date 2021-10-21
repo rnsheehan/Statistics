@@ -107,7 +107,7 @@ void fit::covsrt(std::vector< std::vector< double > > &covar, int &ma, std::vect
 
 	try {
 
-		if (lin_alg::array_2D_square(covar)) {
+		if (vecut::array_2D_square(covar)) {
 			int i, j, k;
 
 			for (i = mfit; i < ma; i++)
@@ -168,7 +168,7 @@ void fit::lfit(std::vector<double> &x, std::vector<double> &y, std::vector<doubl
 				std::vector<double> afunc(ma, 0.0);
 				std::vector< std::vector< double > > beta;
 
-				beta = lin_alg::array_2D(ma, ncols);
+				beta = vecut::array_2D(ma, ncols);
 
 				for (j = 0; j < mfit; j++) {
 					for (k = 0; k < mfit; k++) covar[j][k] = 0.0;
@@ -254,10 +254,10 @@ void fit::non_lin_fit(std::vector<double> &x, std::vector<double> &y, std::vecto
 		bool c5 = ma > 0 ? true : false;
 		bool c6 = (int)(a.size()) == ma ? true : false;
 		bool c7 = (int)(ia.size()) == ma ? true : false;
-		std::pair<int, int> sze = lin_alg::array_2D_size(alpha);
+		std::pair<int, int> sze = vecut::array_2D_size(alpha);
 		bool c9 = sze.first == ma ? true : false;
 		bool c10 = sze.second == ma ? true : false;
-		std::pair<int, int> szea = lin_alg::array_2D_size(covar);
+		std::pair<int, int> szea = vecut::array_2D_size(covar);
 		bool c9a = szea.first == ma ? true : false;
 		bool c10a = szea.second == ma ? true : false;
 		bool c11 = c1 && c2 && c3 && c4 && c5 && c6 && c7 && c9 && c10 && c9a && c10a ? true : false;
@@ -366,10 +366,10 @@ void fit::mrqmin(std::vector<double> &x, std::vector<double> &y, std::vector<dou
 		bool c5 = ma > 0 ? true : false;
 		bool c6 = (int)(a.size()) == ma ? true : false;
 		bool c7 = (int)(ia.size()) == ma ? true : false;
-		std::pair<int, int> sze = lin_alg::array_2D_size(alpha);
+		std::pair<int, int> sze = vecut::array_2D_size(alpha);
 		bool c9 = sze.first == ma ? true : false;
 		bool c10 = sze.second == ma ? true : false;
-		std::pair<int, int> szea = lin_alg::array_2D_size(covar);
+		std::pair<int, int> szea = vecut::array_2D_size(covar);
 		bool c9a = szea.first == ma ? true : false;
 		bool c10a = szea.second == ma ? true : false;
 		bool c11 = c1 && c2 && c3 && c4 && c5 && c6 && c7 && c9 && c10 && c9a && c10a ? true : false;
@@ -393,8 +393,8 @@ void fit::mrqmin(std::vector<double> &x, std::vector<double> &y, std::vector<dou
 
 			for (mfit = 0, j = 0; j < ma; j++) if (ia[j]) mfit++;
 
-			oneda = lin_alg::array_2D(mfit, ncols);
-			temp = lin_alg::array_2D(mfit, mfit);
+			oneda = vecut::array_2D(mfit, ncols);
+			temp = vecut::array_2D(mfit, mfit);
 
 			*alamda = 0.001;
 
@@ -580,6 +580,58 @@ void fit::goodness_of_fit()
 	// chi^{2} / nu ~ 1
 	// q = gammq(nu/2, chi^{2}/2) >= 0.1 // // goodness of fit probability
 	// R^{2} ~ 1
+}
+
+void fit::residuals(std::vector<double>& x, std::vector<double>& y, std::vector<double>& sig, int& ndata, std::vector<double>& a, int& ma, void(*funcs)(double, std::vector<double>&, double*, std::vector<double>&, int&), std::vector<std::vector<double>>& data)
+{
+	// Compute the residuals of a fitted function
+	// i.e. compute the difference between the original data and the fitted function computed using non_lin_fit
+	// store the results in data for later graphical analysis
+	// output array has the form {x, y, sig, f(x), res}
+	// R. Sheehan 21 - 10 - 2021
+	try {
+		bool c1 = ndata > 3 ? true : false;
+		bool c2 = (int)(x.size()) == ndata ? true : false;
+		bool c3 = (int)(y.size()) == ndata ? true : false;
+		bool c4 = (int)(sig.size()) == ndata ? true : false;
+		bool c5 = ma > 0 ? true : false;
+		bool c6 = (int)(a.size()) == ma ? true : false;
+		
+		bool c11 = c1 && c2 && c3 && c4 && c5 && c6 ? true : false;
+
+		if (c11) {
+			int ncols = 5; 
+
+			data = vecut::array_2D(ncols, ndata); 
+
+			// store the data from the calculation in an array
+			std::copy(x.begin(), x.end(), data[0].begin()); 
+			std::copy(y.begin(), y.end(), data[1].begin()); 
+			std::copy(sig.begin(), sig.end(), data[2].begin()); 
+
+			double fit_val = 0.0; 
+			std::vector<double> dyda(ma, 0.0); 
+			for (int i = 0; i < ndata; i++) {
+				funcs(x[i], a, &fit_val, dyda, ma); 
+				data[3][i] = fit_val;
+				data[4][i] = fit_val - y[i]; 
+			}
+		}
+		else {
+			std::string reason = "Error: fit::residuals()\n";
+			if (!c1) reason += "No. data points is not correct ndata = " + template_funcs::toString(ndata) + "\n";
+			if (!c2) reason += "x does not have correct size x.size() = " + template_funcs::toString(x.size()) + "\n";
+			if (!c3) reason += "y does not have correct size y.size() = " + template_funcs::toString(y.size()) + "\n";
+			if (!c4) reason += "sig does not have correct size sig.size() = " + template_funcs::toString(sig.size()) + "\n";
+			if (!c5) reason += "No. fit parameters is not correct ma = " + template_funcs::toString(ma) + "\n";
+			if (!c6) reason += "a does not have correct size a.size() = " + template_funcs::toString(a.size()) + "\n";
+			
+			throw std::invalid_argument(reason);
+		}
+	}
+	catch (std::invalid_argument& e) {
+		std::cerr << e.what();
+	}
 }
 
 void fit::random_sample(std::vector<double> &x, std::vector<double> &y, std::vector<double> &sig, int &ndata, std::vector<double> &xs, std::vector<double> &ys, std::vector<double> &sigs, int &ns)

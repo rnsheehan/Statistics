@@ -92,9 +92,9 @@ int main()
 
 	//testing::monte_carlo_test(); 
 
-	//testing::diode_voltage_data_fit(); 
+	testing::diode_voltage_data_fit(); 
 
-	testing::Lorentzian_data_fit(); 
+	//testing::Lorentzian_data_fit(); 
 	
 	std::cout<<"Press enter to close console\n";
 	std::cin.get(); 
@@ -231,9 +231,9 @@ void sand_box()
 	int cols = 7; 
 	std::vector<std::vector<double>> X; 
 
-	X = lin_alg::array_2D(rows, cols); 
+	X = vecut::array_2D(rows, cols);
 
-	std::pair<int, int> test = lin_alg::array_2D_size(X); 
+	std::pair<int, int> test = vecut::array_2D_size(X);
 
 	X.clear();
 }

@@ -28,7 +28,7 @@ def write_to_file(file_name, numbers):
         else:
             raise Exception
     except Exception:
-        print "\nError: write_to_file()\n"
+        print("\nError: write_to_file()\n")
     
 def plot_histogram(data, the_title):
     # make a basic histogram plot of some dat
@@ -36,7 +36,7 @@ def plot_histogram(data, the_title):
     try:
         if data is not None:
             n_bins = max( len(data)/100, 10)
-            print n_bins
+            print(n_bins)
             plt.hist(data, bins = n_bins, normed = True)
             plt.title(the_title)
             plt.xlabel("Value")
@@ -46,7 +46,7 @@ def plot_histogram(data, the_title):
             plt.cla()
             plt.close()
     except Exception:
-        print "\nError: plot_histogram()\n"
+        print("\nError: plot_histogram()\n")
 
 def main():
     pass
@@ -54,7 +54,7 @@ def main():
 if __name__ == '__main__':
     main()
 
-    print os.getcwd()
+    print(os.getcwd())
     
     file1 = "Data_1.txt"
     mean = 0.0

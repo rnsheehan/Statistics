@@ -26,6 +26,9 @@ namespace fit {
 	// Function for evaluating goodness-of-fit statistics
 	void goodness_of_fit(); 
 
+	// Function for computing the residual of a fit
+	void residuals(std::vector<double>& x, std::vector<double>& y, std::vector<double>& sig, int& ndata, std::vector<double>& a, int& ma, void(*funcs)(double, std::vector<double>&, double*, std::vector<double>&, int&), std::vector<std::vector<double>> &data);
+
 	// generate a randomly sampled data set from an existing data set
 	void random_sample(std::vector<double> &x, std::vector<double> &y, std::vector<double> &sig, int &ndata, std::vector<double> &xs, std::vector<double> &ys, std::vector<double> &sigs, int &ns);
 }

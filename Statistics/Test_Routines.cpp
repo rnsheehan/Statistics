@@ -945,8 +945,8 @@ void testing::gaussj_test()
 	std::vector<std::vector<double>> A; 
 	std::vector<std::vector<double>> b;
 
-	A = lin_alg::array_2D(nrows, ncols); 
-	b = lin_alg::array_2D(nrows, ncolsb);
+	A = vecut::array_2D(nrows, ncols); 
+	b = vecut::array_2D(nrows, ncolsb);
 
 	// Fill the matrix A
 	A[0][0] = 1; A[0][1] = -1; A[0][2] = 2; A[0][3] = -1; 
@@ -1069,7 +1069,7 @@ void testing::lst_sqr_test()
 
 	std::vector<int> ia(NTERM); 
 	std::vector<double> a(NTERM), x(NPT), y(NPT), sig(NPT); 
-	std::vector<std::vector<double>> covar = lin_alg::array_2D(NTERM, NTERM);
+	std::vector<std::vector<double>> covar = vecut::array_2D(NTERM, NTERM);
 
 	// Generate data for the fit
 	for (i = 0; i < NPT; i++) {
@@ -1199,8 +1199,8 @@ void testing::non_lin_fit_test()
 	std::vector<double> dyda(npars, 0.0);
 
 	// data stored in array a in the form a[i] = amp_{k}, a[i+1] = centre_{k}, a[i+2] = width_{k}
-	a[0] = 5.0; a[1] = 2.0; a[2] = 3.0; // Gaussian 1
-	a[3] = 3.0; a[4] = 5.0; a[5] = 1.0; // Gaussian 2
+	a[0] = 5.0; a[1] = 3.0; a[2] = 2.0; // Gaussian 1
+	a[3] = 3.0; a[4] = 7.0; a[5] = 1.0; // Gaussian 2
 
 	spread = 0.01; 
 	xpos = xlow; 
@@ -1226,16 +1226,16 @@ void testing::non_lin_fit_test()
 	double chisq = 0.0; 
 
 	// Declare the necessary arrays
-	std::vector<std::vector<double>> covar = lin_alg::array_2D(npars, npars); 
-	std::vector<std::vector<double>> alpha = lin_alg::array_2D(npars, npars);
+	std::vector<std::vector<double>> covar = vecut::array_2D(npars, npars); 
+	std::vector<std::vector<double>> alpha = vecut::array_2D(npars, npars);
 
 	// define the initial guesses to the parameters to be determined
 	std::vector<double> a_guess(npars, 0.0);
 	std::vector<int> ia(npars, 1); // tell the algorithm that you want to locate all parameters 
 
 	// Good guesses
-	/*a_guess[0] = 4.5; a_guess[1] = 2.2; a_guess[2] = 2.8;
-	a_guess[3] = 2.5; a_guess[4] = 4.3; a_guess[5] = 1.4;*/
+	a_guess[0] = 4.5; a_guess[1] = 2.2; a_guess[2] = 2.8;
+	a_guess[3] = 2.5; a_guess[4] = 6.3; a_guess[5] = 1.4;
 
 	// Bad guesses
 	/*a_guess[0] = 4.0; a_guess[1] = -2.2; a_guess[2] = 1.8;
@@ -1251,10 +1251,10 @@ void testing::non_lin_fit_test()
 	//a_guess[3] = 2.5; a_guess[4] = 4.3; a_guess[5] = 1.4; // these are the guesses for the parameters being sought
 
 	// Find four parameters
-	ia[0] = 0; ia[1] = 1; ia[2] = 1;
-	a_guess[0] = 5.0; a_guess[1] = 1.4; a_guess[2] = 3.2; // these parameters are fixed
-	ia[3] = 1; ia[4] = 0; ia[5] = 1;
-	a_guess[3] = 2.5; a_guess[4] = 5.0; a_guess[5] = 1.4; // these are the guesses for the parameters being sought
+	//ia[0] = 0; ia[1] = 1; ia[2] = 1;
+	//a_guess[0] = 5.0; a_guess[1] = 2.4; a_guess[2] = 1.2; // these parameters are fixed
+	//ia[3] = 1; ia[4] = 0; ia[5] = 1;
+	//a_guess[3] = 2.5; a_guess[4] = 6.0; a_guess[5] = 1.4; // these are the guesses for the parameters being sought
 
 	// Find two parameters
 	/*ia[0] = 1; ia[1] = 0; ia[2] = 0;
@@ -1270,9 +1270,19 @@ void testing::non_lin_fit_test()
 
 	fit::non_lin_fit(xdata, ydata, sigdata, npts, a_guess, ia, npars, covar, alpha, &chisq, fgauss, ITMAX, TOL, true); 
 
+	// compute the residuals for the fit
+	std::vector<std::vector<double>> data; 
+	fit::residuals(xdata, ydata, sigdata, npts, a_guess, npars, fgauss, data); 
+
+	// output the residuals 
+	std::string thefile = "Gauss_non_lin_fit.txt"; 
+
+	int nrows = 5; 
+	vecut::write_into_file(thefile, data, nrows, npts);
+
 	xdata.clear(); ydata.clear(); sigdata.clear(); 
 	a_guess.clear(); ia.clear(); covar.clear(); alpha.clear(); 
-	a.clear(); 
+	a.clear(); data.clear(); 
 }
 
 void testing::rng_test()
@@ -1376,8 +1386,8 @@ void testing::monte_carlo_test()
 	double chisq = 0.0;
 
 	// Declare the necessary arrays
-	std::vector<std::vector<double>> covar = lin_alg::array_2D(npars, npars);
-	std::vector<std::vector<double>> alpha = lin_alg::array_2D(npars, npars);
+	std::vector<std::vector<double>> covar = vecut::array_2D(npars, npars);
+	std::vector<std::vector<double>> alpha = vecut::array_2D(npars, npars);
 
 	// define the initial guesses to the parameters to be determined
 	std::vector<double> a_guess(npars, 0.0);
@@ -1487,14 +1497,17 @@ void testing::diode_voltage_data_fit()
 	long idum = (-1011);
 	double spread, xlow, xhigh, deltax, xpos, yval;
 
-	xlow = 0.0; xhigh = 100.0; deltax = 0.45;
+	// Diode fit works better when you ignore the value at 0 mA
+	// 
+	// You've noticed this before
+	xlow = 0.45; xhigh = 100.0; deltax = 0.45;
 	npts = (int)(1.0 + ((xhigh - xlow) / deltax));
 
 	std::vector<double> xdata(npts, 0.0);
 	std::vector<double> ydata(npts, 0.0);
 	std::vector<double> sigdata(npts, 0.0);
 
-	spread = 0.02; // variance of the noise being added to the signal
+	spread = 0.2; // variance of the noise being added to the signal
 	xpos = xlow;
 	for (int i = 0; i < npts; i++) {
 
@@ -1518,8 +1531,8 @@ void testing::diode_voltage_data_fit()
 	double chisq = 0.0;
 
 	// Declare the necessary arrays
-	std::vector<std::vector<double>> covar = lin_alg::array_2D(npars, npars);
-	std::vector<std::vector<double>> alpha = lin_alg::array_2D(npars, npars);
+	std::vector<std::vector<double>> covar = vecut::array_2D(npars, npars);
+	std::vector<std::vector<double>> alpha = vecut::array_2D(npars, npars);
 
 	// define the initial guesses to the parameters to be determined
 	std::vector<double> a_guess(npars, 0.0);
@@ -1530,6 +1543,16 @@ void testing::diode_voltage_data_fit()
 
 	// run the fitting algorithm
 	fit::non_lin_fit(xdata, ydata, sigdata, npts, a_guess, ia, npars, covar, alpha, &chisq, diode_voltage, ITMAX, TOL, true);
+
+	// compute the residuals for the fit
+	std::vector<std::vector<double>> data;
+	fit::residuals(xdata, ydata, sigdata, npts, a_guess, npars, diode_voltage, data);
+
+	// output the residuals 
+	std::string thefile = "Diode_non_lin_fit.txt";
+
+	int nrows = 5;
+	vecut::write_into_file(thefile, data, nrows, npts);
 
 	xdata.clear(); ydata.clear(); sigdata.clear();
 	a_guess.clear(); ia.clear(); covar.clear(); alpha.clear();
@@ -1569,7 +1592,7 @@ void testing::Lorentzian_data_fit()
 
 	double f = 80; 
 	double xc = 80; // Lorentzian centre
-	double G2 = 0.5; // Lorentzian HWHM
+	double G2 = 2.0; // Lorentzian HWHM
 	double y = 0.0; //computed Lorentzian value
 
 	int npars = 2;
@@ -1593,14 +1616,14 @@ void testing::Lorentzian_data_fit()
 	long idum = (-1011);
 	double spread, xlow, xhigh, deltax, xpos, yval;
 
-	xlow = 70.0; xhigh = 90.0; deltax = 0.25;
+	xlow = 70.0; xhigh = 90.0; deltax = 0.1;
 	npts = (int)(1.0 + ((xhigh - xlow) / deltax));
 
 	std::vector<double> xdata(npts, 0.0);
 	std::vector<double> ydata(npts, 0.0);
 	std::vector<double> sigdata(npts, 0.0);
 
-	spread = 0.001; // variance of the noise being added to the signal
+	spread = 0.25; // variance of the noise being added to the signal
 	xpos = xlow;
 	for (int i = 0; i < npts; i++) {
 
@@ -1613,6 +1636,7 @@ void testing::Lorentzian_data_fit()
 		ydata[i] = yval;
 
 		sigdata[i] = fabs(yval) > 0.0 ? spread * yval : spread; // sigdata cannot have zero values
+		//sigdata[i] = 0.01; // sigdata cannot have zero values
 
 		xpos += deltax;
 	}
@@ -1640,21 +1664,31 @@ void testing::Lorentzian_data_fit()
 	double chisq = 0.0;
 
 	// Declare the necessary arrays
-	std::vector<std::vector<double>> covar = lin_alg::array_2D(npars, npars);
-	std::vector<std::vector<double>> alpha = lin_alg::array_2D(npars, npars);
+	std::vector<std::vector<double>> covar = vecut::array_2D(npars, npars);
+	std::vector<std::vector<double>> alpha = vecut::array_2D(npars, npars);
 
 	// define the initial guesses to the parameters to be determined
 	std::vector<double> a_guess(npars, 0.0);
 	std::vector<int> ia(npars, 1); // tell the algorithm that you want to locate all parameters 
 
-	ia[0] = 0; // search for params 0 and 2, fix param 1 value
+	//ia[0] = 0; // search for params 0 and 2, fix param 1 value
 	a_guess[0] = xc; a_guess[1] = -4.0; // initial guesses for the parameters, fit routine is sufficiently robust
 	//a_guess[0] = xc; a_guess[1] = 1.0 / Lmax; // initial guesses for the parameters
 
 	// run the fitting algorithm
 	fit::non_lin_fit(xdata, ydata, sigdata, npts, a_guess, ia, npars, covar, alpha, &chisq, Lorentzian, ITMAX, TOL, true);
 
+	// compute the residuals for the fit
+	std::vector<std::vector<double>> data;
+	fit::residuals(xdata, ydata, sigdata, npts, a_guess, npars, Lorentzian, data);
+
+	// output the residuals 
+	std::string thefile = "Lorentzian_non_lin_fit.txt";
+
+	int nrows = 5;
+	vecut::write_into_file(thefile, data, nrows, npts);
+
 	xdata.clear(); ydata.clear(); sigdata.clear();
 	a_guess.clear(); ia.clear(); covar.clear(); alpha.clear();
-	a.clear();
+	a.clear(); data.clear(); 
 }
