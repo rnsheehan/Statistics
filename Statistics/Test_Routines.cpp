@@ -1568,7 +1568,7 @@ void testing::Lorentzian_data_fit()
 	// R. Sheehan 21 - 10 - 2021
 
 	double f = 80; 
-	double xc = 33; // Lorentzian centre
+	double xc = 80; // Lorentzian centre
 	double G2 = 0.5; // Lorentzian HWHM
 	double y = 0.0; //computed Lorentzian value
 
@@ -1600,7 +1600,7 @@ void testing::Lorentzian_data_fit()
 	std::vector<double> ydata(npts, 0.0);
 	std::vector<double> sigdata(npts, 0.0);
 
-	spread = 0.2; // variance of the noise being added to the signal
+	spread = 0.001; // variance of the noise being added to the signal
 	xpos = xlow;
 	for (int i = 0; i < npts; i++) {
 
@@ -1617,6 +1617,22 @@ void testing::Lorentzian_data_fit()
 		xpos += deltax;
 	}
 
+	// For the Lorentzian the HWHM value is given by 1/peak-value
+	// So for noisy data HWHM should be roughly equal to 1/peak-value of data
+	// Max value should be close to x_centre, assuming data is distributed equally around x_centre
+	// This doesn't work when x_centre is outside the range [xlow, xhigh], but otherwise works quite well
+	int imax=0; 
+	double Lmax = -500; 
+	for (int i = 0; i < npts; i++) {
+		if (ydata[i] > Lmax) {
+			Lmax = ydata[i];
+			imax = i; 
+		}
+	}
+	std::cout << "Max value in data set: " << Lmax << "\n"; 
+	std::cout << "Corresponding Frequency: " << xdata[imax] << "\n"; 
+	std::cout << "Estimate of HWHM: " << 1.0 / Lmax << "\n\n"; 
+
 	// Perform the best it search for the data set
 	int ITMAX = 10;
 
@@ -1632,7 +1648,8 @@ void testing::Lorentzian_data_fit()
 	std::vector<int> ia(npars, 1); // tell the algorithm that you want to locate all parameters 
 
 	ia[0] = 0; // search for params 0 and 2, fix param 1 value
-	a_guess[0] = xc; a_guess[1] = 1.5; // initial guesses for the parameters
+	a_guess[0] = xc; a_guess[1] = -4.0; // initial guesses for the parameters, fit routine is sufficiently robust
+	//a_guess[0] = xc; a_guess[1] = 1.0 / Lmax; // initial guesses for the parameters
 
 	// run the fitting algorithm
 	fit::non_lin_fit(xdata, ydata, sigdata, npts, a_guess, ia, npars, covar, alpha, &chisq, Lorentzian, ITMAX, TOL, true);
