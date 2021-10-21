@@ -1568,8 +1568,8 @@ void testing::Lorentzian_data_fit()
 	// R. Sheehan 21 - 10 - 2021
 
 	double f = 80; 
-	double xc = 80; // Lorentzian centre
-	double G2 = 1; // Lorentzian HWHM
+	double xc = 33; // Lorentzian centre
+	double G2 = 0.5; // Lorentzian HWHM
 	double y = 0.0; //computed Lorentzian value
 
 	int npars = 2;
@@ -1579,13 +1579,13 @@ void testing::Lorentzian_data_fit()
 	// Initial guesses for the parameters
 	a[0] = xc; a[1] = G2; 
 
-	testing::Lorentzian(f, a, &y, dyda, npars);
+	/*testing::Lorentzian(f, a, &y, dyda, npars);
 
 	std::cout << "Lorentzian Fit Test Evaluation\n";
 	std::cout << "Lorentzian Frequency value: " << f << " MHz\n";
 	std::cout << "Lorentizian Spectrum value: " << y << "\n";
 	std::cout << "Der wrt xc: " << dyda[0] << "\n";
-	std::cout << "Der wrt G: " << dyda[1] << "\n\n";
+	std::cout << "Der wrt G: " << dyda[1] << "\n\n";*/
 	std::cout << "Lorentzian Equation Fit\n";
 
 	// Generate data to use in the fit process
@@ -1600,7 +1600,7 @@ void testing::Lorentzian_data_fit()
 	std::vector<double> ydata(npts, 0.0);
 	std::vector<double> sigdata(npts, 0.0);
 
-	spread = 0.02; // variance of the noise being added to the signal
+	spread = 0.2; // variance of the noise being added to the signal
 	xpos = xlow;
 	for (int i = 0; i < npts; i++) {
 
@@ -1632,7 +1632,7 @@ void testing::Lorentzian_data_fit()
 	std::vector<int> ia(npars, 1); // tell the algorithm that you want to locate all parameters 
 
 	ia[0] = 0; // search for params 0 and 2, fix param 1 value
-	a_guess[0] = 80; a_guess[1] = 1.5; // initial guesses for the parameters
+	a_guess[0] = xc; a_guess[1] = 1.5; // initial guesses for the parameters
 
 	// run the fitting algorithm
 	fit::non_lin_fit(xdata, ydata, sigdata, npts, a_guess, ia, npars, covar, alpha, &chisq, Lorentzian, ITMAX, TOL, true);
