@@ -1535,3 +1535,109 @@ void testing::diode_voltage_data_fit()
 	a_guess.clear(); ia.clear(); covar.clear(); alpha.clear();
 	a.clear();
 }
+
+void testing::Lorentzian(double x, std::vector<double>& a, double* y, std::vector<double>& dyda, int& na)
+{
+	// Definition of the Lorentzian function to be fitted
+	// a stores Lorentzian parameters a = { x_{centre}, G/2}
+	// a[0] = x_{centre}, a[1] = G / 2
+	// G/2 is the Lorentzian half-width at half-maximum (i.e. linewidth)
+	// Lorentzian value is given by *y
+	// This Lorentzian is not normalised, to normalise multiply *y by 1/pi
+	// Normalisation not required for my purposes
+	// dyda is array that stores value of derivative of Lorentzian function wrt each parameter in a
+	// Dimensions of the arrays are a[0..na-1], dyda[0..na-1]
+	// na is no. parameters
+	// R. Sheehan 21 - 10 - 2021
+
+	try {
+		double t1 = x - a[0]; // ( x - x_{centre} )
+		double denom = template_funcs::DSQR(t1) + template_funcs::DSQR(a[1]); // ( x - x_{centre} )^{2} + (G/2)^{2}
+		*y = a[1] / denom; // (G/2) / [ ( x - x_{centre} )^{2} + (G/2)^{2} ]
+		dyda[0] = (2.0 * t1 * (*y)) / a[1]; // \partial L / \partial x_{centre}
+		dyda[1] = (*y) * ( ( 1.0 / ( a[1] ) ) - 2.0*(*y) ); // \partial L / \partial G
+	}
+	catch (std::invalid_argument& e) {
+		std::cerr << e.what();
+	}
+}
+
+void testing::Lorentzian_data_fit()
+{
+	// Apply LM method to measured linewidth spectrum data
+	// R. Sheehan 21 - 10 - 2021
+
+	double f = 80; 
+	double xc = 80; // Lorentzian centre
+	double G2 = 1; // Lorentzian HWHM
+	double y = 0.0; //computed Lorentzian value
+
+	int npars = 2;
+	std::vector<double> a(npars, 0.0);
+	std::vector<double> dyda(npars, 0.0);
+
+	// Initial guesses for the parameters
+	a[0] = xc; a[1] = G2; 
+
+	testing::Lorentzian(f, a, &y, dyda, npars);
+
+	std::cout << "Lorentzian Fit Test Evaluation\n";
+	std::cout << "Lorentzian Frequency value: " << f << " MHz\n";
+	std::cout << "Lorentizian Spectrum value: " << y << "\n";
+	std::cout << "Der wrt xc: " << dyda[0] << "\n";
+	std::cout << "Der wrt G: " << dyda[1] << "\n\n";
+	std::cout << "Lorentzian Equation Fit\n";
+
+	// Generate data to use in the fit process
+	int npts;
+	long idum = (-1011);
+	double spread, xlow, xhigh, deltax, xpos, yval;
+
+	xlow = 70.0; xhigh = 90.0; deltax = 0.25;
+	npts = (int)(1.0 + ((xhigh - xlow) / deltax));
+
+	std::vector<double> xdata(npts, 0.0);
+	std::vector<double> ydata(npts, 0.0);
+	std::vector<double> sigdata(npts, 0.0);
+
+	spread = 0.02; // variance of the noise being added to the signal
+	xpos = xlow;
+	for (int i = 0; i < npts; i++) {
+
+		Lorentzian(xpos, a, &yval, dyda, npars); // evaluate the diode-voltage function
+
+		xdata[i] = xpos;
+
+		yval *= rng::gasdev1(&idum, 1.0, template_funcs::DSQR(spread)); // add noise to the signal value
+
+		ydata[i] = yval;
+
+		sigdata[i] = fabs(yval) > 0.0 ? spread * yval : spread; // sigdata cannot have zero values
+
+		xpos += deltax;
+	}
+
+	// Perform the best it search for the data set
+	int ITMAX = 10;
+
+	double TOL = 0.001;
+	double chisq = 0.0;
+
+	// Declare the necessary arrays
+	std::vector<std::vector<double>> covar = lin_alg::array_2D(npars, npars);
+	std::vector<std::vector<double>> alpha = lin_alg::array_2D(npars, npars);
+
+	// define the initial guesses to the parameters to be determined
+	std::vector<double> a_guess(npars, 0.0);
+	std::vector<int> ia(npars, 1); // tell the algorithm that you want to locate all parameters 
+
+	ia[0] = 0; // search for params 0 and 2, fix param 1 value
+	a_guess[0] = 80; a_guess[1] = 1.5; // initial guesses for the parameters
+
+	// run the fitting algorithm
+	fit::non_lin_fit(xdata, ydata, sigdata, npts, a_guess, ia, npars, covar, alpha, &chisq, Lorentzian, ITMAX, TOL, true);
+
+	xdata.clear(); ydata.clear(); sigdata.clear();
+	a_guess.clear(); ia.clear(); covar.clear(); alpha.clear();
+	a.clear();
+}

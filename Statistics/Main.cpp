@@ -92,7 +92,9 @@ int main()
 
 	//testing::monte_carlo_test(); 
 
-	testing::diode_voltage_data_fit(); 
+	//testing::diode_voltage_data_fit(); 
+
+	testing::Lorentzian_data_fit(); 
 	
 	std::cout<<"Press enter to close console\n";
 	std::cin.get(); 
