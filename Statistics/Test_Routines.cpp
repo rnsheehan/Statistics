@@ -1587,7 +1587,7 @@ void testing::Lorentzian(double x, std::vector<double>& a, double* y, std::vecto
 
 void testing::Lorentzian_data_fit()
 {
-	// Apply LM method to measured linewidth spectrum data
+	// Apply LM method to test Lorentzian data
 	// R. Sheehan 21 - 10 - 2021
 
 	double f = 80; 
@@ -1692,4 +1692,102 @@ void testing::Lorentzian_data_fit()
 	xdata.clear(); ydata.clear(); sigdata.clear();
 	a_guess.clear(); ia.clear(); covar.clear(); alpha.clear();
 	a.clear(); data.clear(); 
+}
+
+void testing::Lorentzian_data_fit_test()
+{
+	// Apply LM method to measured linewidth spectrum data
+	// R. Sheehan 26 - 10 - 2021
+
+	// Read in the measured spectral data
+	std::string filename = "Smpl_LLM_1.txt"; 
+
+	int npts, n_rows, npars = 2, n_cols, indx_max = 0;
+	long idum = (-1011);
+	double spread = 0.3, spctr_max = -500.0, f_max = 0;
+	
+	std::vector<std::vector<double>> the_data; 
+
+	vecut::read_into_matrix(filename, the_data, n_rows, n_cols, true);
+
+	// Estimate sigdata
+	std::vector<double> xdata;
+	std::vector<double> ydata;
+	std::vector<double> sigdata;
+
+	// for some reason the copy was throwing an exception
+	//std::copy( xdata.begin(), xdata.end(), vecut::get_col(the_data, 0) ); 
+	//std::copy( ydata.begin(), ydata.end(), vecut::get_col(the_data, 1) ); 
+
+	//xdata = vecut::get_col(the_data, 0);
+	//ydata = vecut::get_col(the_data, 1);
+	
+	for (int i = 0; i < n_rows; i++) {
+		if (the_data[i][0] > 70.0 && the_data[i][0] < 90.0) {
+
+			xdata.push_back(the_data[i][0]); 
+
+			ydata.push_back( 1.0e+6 * pow(10.0, the_data[i][1] / 10.0) ); // convert the spectral data from dBm to mW scale and rescale it
+		}
+	}
+
+	npts = static_cast<int>( xdata.size() ); 
+
+	for (int i = 0; i < npts; i++) {
+		if (ydata[i] > spctr_max) {
+			spctr_max = ydata[i]; 
+			indx_max = i; 
+		}
+		
+		if (fabs(ydata[i]) > 0.0) {
+			sigdata.push_back(spread * ydata[i]); 
+		}
+		else {
+			sigdata.push_back(spread); // sigdata cannot have zero values
+		}
+	}
+
+	// For the Lorentzian the HWHM value is given by 1/peak-value
+	// So for noisy data HWHM should be roughly equal to 1/peak-value of data
+	// Max value should be close to x_centre, assuming data is distributed equally around x_centre
+	// This doesn't work when x_centre is outside the range [xlow, xhigh], but otherwise works quite well
+	std::cout << "Max value in data set: " << spctr_max << "\n";
+	std::cout << "Corresponding Frequency: " << xdata[indx_max] << "\n";
+	std::cout << "Estimate of HWHM: " << 1.0 / spctr_max << "\n\n";
+
+	// Perform the best it search for the data set
+	int ITMAX = 10;
+
+	double TOL = 0.001;
+	double chisq = 0.0;
+
+	// Declare the necessary arrays
+	std::vector<std::vector<double>> covar = vecut::array_2D(npars, npars);
+	std::vector<std::vector<double>> alpha = vecut::array_2D(npars, npars);
+
+	// define the initial guesses to the parameters to be determined
+	std::vector<double> a_guess(npars, 0.0);
+	std::vector<int> ia(npars, 1); // tell the algorithm that you want to locate all parameters 
+
+	//ia[0] = 0; // search for params 0 and 2, fix param 1 value
+	a_guess[0] = xdata[indx_max]; 
+	//a_guess[1] = 1.0e-6 / spctr_max; // initial guesses for the parameters
+	a_guess[1] = 1.0; // initial guesses for the parameters
+
+	// run the fitting algorithm
+	fit::non_lin_fit(xdata, ydata, sigdata, npts, a_guess, ia, npars, covar, alpha, &chisq, Lorentzian, ITMAX, TOL, true);
+
+	// compute the residuals for the fit
+	std::vector<std::vector<double>> data;
+	fit::residuals(xdata, ydata, sigdata, npts, a_guess, npars, Lorentzian, data);
+
+	// output the residuals 
+	std::string thefile = "Lorentzian_non_lin_fit.txt";
+
+	int nrows = 5;
+	vecut::write_into_file(thefile, data, nrows, npts);
+
+	xdata.clear(); ydata.clear(); sigdata.clear();
+	a_guess.clear(); ia.clear(); covar.clear(); alpha.clear();
+	data.clear(); the_data.clear(); 
 }
