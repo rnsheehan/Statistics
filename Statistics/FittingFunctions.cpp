@@ -246,6 +246,8 @@ void fit::non_lin_fit(std::vector<double> &x, std::vector<double> &y, std::vecto
 	// sig cannot contain any zeroes, all elements must be strictly non-zero!
 	// R. Sheehan 19 - 10 - 2021
 
+	// What can you do if you do not know the measurement error \sigma? 
+
 	try {
 		bool c1 = ndata > 3 ? true : false;
 		bool c2 = (int)(x.size()) == ndata ? true : false;
@@ -544,13 +546,17 @@ void fit::mrqcof(std::vector<double> &x, std::vector<double> &y, std::vector<dou
 				}
 
 				*chisq += template_funcs::DSQR(dy)*sig2i; // find chi^{2}
+				//*chisq += template_funcs::DSQR(dy); // find chi^{2}
 			}
 
 			// fill the symmetric side
 			for (j = 1; j < mfit; j++)
 				for (k = 0; k<j; k++) alpha[k][j] = alpha[j][k];
 
-			//lin_alg::array_2d_print(alpha); 
+			/*vecut::array_2d_print(alpha);
+			std::cout << "\n"; 
+			vecut::print_vec(beta); 
+			std::cout << "\n";*/
 
 			dyda.clear();
 		}

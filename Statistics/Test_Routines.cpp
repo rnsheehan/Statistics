@@ -1616,18 +1616,18 @@ void testing::Lorentzian_data_fit()
 	long idum = (-1011);
 	double spread, xlow, xhigh, deltax, xpos, yval;
 
-	xlow = 70.0; xhigh = 90.0; deltax = 0.1;
+	xlow = 70.0; xhigh = 90.0; deltax = 0.05;
 	npts = (int)(1.0 + ((xhigh - xlow) / deltax));
 
 	std::vector<double> xdata(npts, 0.0);
 	std::vector<double> ydata(npts, 0.0);
 	std::vector<double> sigdata(npts, 0.0);
 
-	spread = 0.25; // variance of the noise being added to the signal
+	spread = 0.05; // variance of the noise being added to the signal
 	xpos = xlow;
 	for (int i = 0; i < npts; i++) {
 
-		Lorentzian(xpos, a, &yval, dyda, npars); // evaluate the diode-voltage function
+		Lorentzian(xpos, a, &yval, dyda, npars); // evaluate the Lorentzian function
 
 		xdata[i] = xpos;
 
@@ -1636,7 +1636,8 @@ void testing::Lorentzian_data_fit()
 		ydata[i] = yval;
 
 		sigdata[i] = fabs(yval) > 0.0 ? spread * yval : spread; // sigdata cannot have zero values
-		//sigdata[i] = 0.01; // sigdata cannot have zero values
+		//sigdata[i] = spread/100.0; // sigdata cannot have zero values
+		//sigdata[i] = 1.0; // sigdata cannot have zero values
 
 		xpos += deltax;
 	}
@@ -1672,8 +1673,8 @@ void testing::Lorentzian_data_fit()
 	std::vector<int> ia(npars, 1); // tell the algorithm that you want to locate all parameters 
 
 	//ia[0] = 0; // search for params 0 and 2, fix param 1 value
-	a_guess[0] = xc; a_guess[1] = -4.0; // initial guesses for the parameters, fit routine is sufficiently robust
-	//a_guess[0] = xc; a_guess[1] = 1.0 / Lmax; // initial guesses for the parameters
+	//a_guess[0] = xc; a_guess[1] = 4.0; // initial guesses for the parameters, fit routine is sufficiently robust
+	a_guess[0] = xc; a_guess[1] = 1.0 / Lmax; // initial guesses for the parameters
 
 	// run the fitting algorithm
 	fit::non_lin_fit(xdata, ydata, sigdata, npts, a_guess, ia, npars, covar, alpha, &chisq, Lorentzian, ITMAX, TOL, true);

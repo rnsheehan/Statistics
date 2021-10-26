@@ -82,7 +82,7 @@ if __name__ == '__main__':
     print(pwd)
     
     #filename = "Gauss_non_lin_fit.txt"
-    #filename = 'Lorentzian_non_lin_fit.txt'
-    filename = 'Diode_non_lin_fit.txt'
+    filename = 'Lorentzian_non_lin_fit.txt'
+    #filename = 'Diode_non_lin_fit.txt'
     non_lin_fit_plot(filename)
     
