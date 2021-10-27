@@ -1562,8 +1562,8 @@ void testing::diode_voltage_data_fit()
 void testing::Lorentzian(double x, std::vector<double>& a, double* y, std::vector<double>& dyda, int& na)
 {
 	// Definition of the Lorentzian function to be fitted
-	// a stores Lorentzian parameters a = { x_{centre}, G/2}
-	// a[0] = x_{centre}, a[1] = G / 2
+	// a stores Lorentzian parameters a = { A, x_{centre}, G/2}
+	// a[0] = A, a[1] = x_{centre}, a[2] = G / 2
 	// G/2 is the Lorentzian half-width at half-maximum (i.e. linewidth)
 	// Lorentzian value is given by *y
 	// This Lorentzian is not normalised, to normalise multiply *y by 1/pi
@@ -1574,12 +1574,13 @@ void testing::Lorentzian(double x, std::vector<double>& a, double* y, std::vecto
 	// R. Sheehan 21 - 10 - 2021
 
 	try {
-		double t1 = x - a[0]; // ( x - x_{centre} )
-		double norm_factor = 1.0; // normalisaion factor can be set to 1.0 or PI
-		double denom = norm_factor * ( template_funcs::DSQR(t1) + template_funcs::DSQR(a[1]) ); // ( x - x_{centre} )^{2} + (G/2)^{2}
-		*y = a[1] / denom; // (G/2) / [ ( x - x_{centre} )^{2} + (G/2)^{2} ]
-		dyda[0] = (2.0 * norm_factor * t1 * template_funcs::DSQR(*y) ) / a[1]; // \partial L / \partial x_{centre}
-		dyda[1] = (*y) * ( ( 1.0 / a[1]) -  ( 2.0 * norm_factor * (*y) ) ); // \partial L / \partial G
+		double t1 = x - a[1]; // ( x - x_{centre} )
+		double t2 = (a[0] * a[2]); // A (G/2)
+		double denom = ( template_funcs::DSQR(t1) + template_funcs::DSQR(a[2]) ); // ( x - x_{centre} )^{2} + (G/2)^{2}
+		*y = t2 / denom; // A (G/2) / [ ( x - x_{centre} )^{2} + (G/2)^{2} ]
+		dyda[0] = (*y) / a[0]; // \partial L / \partial A
+		dyda[1] = (2.0 * t1 * template_funcs::DSQR(*y) ) / t1; // \partial L / \partial x_{centre}
+		dyda[2] = (*y) * ( ( 1.0 / a[2]) -  ( ( 2.0 * (*y) ) / a[0] ) ); // \partial L / \partial G
 	}
 	catch (std::invalid_argument& e) {
 		std::cerr << e.what();
@@ -1592,16 +1593,17 @@ void testing::Lorentzian_data_fit()
 	// R. Sheehan 21 - 10 - 2021
 
 	double f = 80; 
+	double A = 2; // Lorentzian amplitude
 	double xc = 80; // Lorentzian centre
 	double G2 = 0.74; // Lorentzian HWHM
 	double y = 0.0; //computed Lorentzian value
 
-	int npars = 2;
+	int npars = 3;
 	std::vector<double> a(npars, 0.0);
 	std::vector<double> dyda(npars, 0.0);
 
 	// Initial guesses for the parameters
-	a[0] = xc; a[1] = G2; 
+	a[0] = A; a[1] = xc; a[2] = G2;
 
 	/*testing::Lorentzian(f, a, &y, dyda, npars);
 
@@ -1674,8 +1676,8 @@ void testing::Lorentzian_data_fit()
 	std::vector<int> ia(npars, 1); // tell the algorithm that you want to locate all parameters 
 
 	//ia[0] = 0; // search for params 0 and 2, fix param 1 value
-	//a_guess[0] = xc; a_guess[1] = 4.0; // initial guesses for the parameters, fit routine is sufficiently robust
-	a_guess[0] = xc; a_guess[1] = 1.0 / Lmax; // initial guesses for the parameters
+	//a_guess[0] = A; a_guess[1] = xc; a_guess[2] = 4.0; // initial guesses for the parameters, fit routine is sufficiently robust
+	a_guess[0] = A; a_guess[1] = xc; a_guess[2] = 1.0 / Lmax; // initial guesses for the parameters
 
 	// run the fitting algorithm
 	fit::non_lin_fit(xdata, ydata, sigdata, npts, a_guess, ia, npars, covar, alpha, &chisq, Lorentzian, ITMAX, TOL, true);
@@ -1701,11 +1703,11 @@ void testing::Lorentzian_data_fit_test()
 	// R. Sheehan 26 - 10 - 2021
 
 	// Read in the measured spectral data
-	//std::string filename = "Sample_LLM.csv"; 
-	std::string filename = "Lorentz_iodeal.csv"; 
+	std::string filename = "Sample_LLM.csv"; 
+	//std::string filename = "Lorentz_iodeal.csv"; // this is the same data set as Sample_LLM.csv
 	//std::string filename = "Smpl_LLM_1.txt"; 
 
-	int npts, n_rows, npars = 2, n_cols, indx_max = 0;
+	int npts, n_rows, npars = 3, n_cols, indx_max = 0;
 	long idum = (-1011);
 	double spread = 0.1, spctr_max = -500.0, f_max = 0, f_start, f_end, scale_fac;
 	
@@ -1725,7 +1727,7 @@ void testing::Lorentzian_data_fit_test()
 	//xdata = vecut::get_col(the_data, 0);
 	//ydata = vecut::get_col(the_data, 1);
 
-	//scale_fac = 1.0e+3;  f_start = 77.0; f_end = 83.0;
+	//scale_fac = 1.0e+6;  f_start = 77.0; f_end = 83.0;
 	//for (int i = 0; i < n_rows; i++) {
 	//	if (the_data[i][0] > f_start && the_data[i][0] < f_end) {
 	//		xdata.push_back(the_data[i][0]);
@@ -1733,7 +1735,7 @@ void testing::Lorentzian_data_fit_test()
 	//	}
 	//}
 
-	scale_fac = 1.0e+3;  f_start = 70.0 * scale_fac; f_end = 90.0 * scale_fac;
+	scale_fac = 1.0e+3;  f_start = 77.0 * scale_fac; f_end = 83.0 * scale_fac;
 	for (int i = 0; i < n_rows; i++) {
 		if (the_data[i][0] > f_start && the_data[i][0] < f_end) {
 			xdata.push_back(the_data[i][0]/scale_fac); 
@@ -1757,17 +1759,24 @@ void testing::Lorentzian_data_fit_test()
 		}
 	}
 
-	for (int i = 0; i < npts; i++) {
+	// Scale peak to unity
+	// This won't work because it will force the HWHM to be equal to 0.5 or something
+	/*for (int i = 0; i < npts; i++) {
 		ydata[i] /= spctr_max; 
-	}
+	}*/
+
+	// What about subtracting an offset? Doesn't work either
+	/*for (int i = 0; i < npts; i++) {
+		ydata[i] -= spctr_max; 
+	}*/
 
 	// For the Lorentzian the HWHM value is given by 1/peak-value
 	// So for noisy data HWHM should be roughly equal to 1/peak-value of data
 	// Max value should be close to x_centre, assuming data is distributed equally around x_centre
 	// This doesn't work when x_centre is outside the range [xlow, xhigh], but otherwise works quite well
-	std::cout << "Max value in data set: " << spctr_max << "\n";
-	std::cout << "Corresponding Frequency: " << xdata[indx_max] << "\n";
-	std::cout << "Estimate of HWHM: " << 1.0 / spctr_max << "\n\n";
+	
+	std::cout << "\nCorresponding Frequency: " << xdata[indx_max] << " MHz\n";
+	std::cout << "Max value in data set: " << spctr_max << "\n\n";
 
 	// Perform the best it search for the data set
 	int ITMAX = 10;
@@ -1783,14 +1792,19 @@ void testing::Lorentzian_data_fit_test()
 	std::vector<double> a_guess(npars, 0.0);
 	std::vector<int> ia(npars, 1); // tell the algorithm that you want to locate all parameters 
 
-	ia[0] = 0; // search for params 0 and 2, fix param 1 value
+	ia[1] = 0; // search for params 0 and 2, fix param 1 value
 	//a_guess[0] = xdata[indx_max]; 
-	a_guess[0] = 80.0; 
-	a_guess[1] = 1.0 / spctr_max; // initial guesses for the parameters
-	//a_guess[1] = 1.5; // initial guesses for the parameters
+	a_guess[0] = 1.5; 
+	a_guess[1] = 80;
+	a_guess[2] = 0.5; // initial guesses for the parameters
+	//a_guess[2] = 1.5; // initial guesses for the parameters
 
 	// run the fitting algorithm
 	fit::non_lin_fit(xdata, ydata, sigdata, npts, a_guess, ia, npars, covar, alpha, &chisq, Lorentzian, ITMAX, TOL, true);
+
+	std::cout << "Fitted centre freq: " << a_guess[1] << " MHz\n"; 
+	std::cout << "Computed peak val: " << a_guess[0] / a_guess[2] << "\n"; 
+	std::cout << "Computed HWHM: " << a_guess[2] << " MHz\n\n"; 
 
 	// compute the residuals for the fit
 	std::vector<std::vector<double>> data;

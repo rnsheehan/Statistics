@@ -62,7 +62,7 @@ def non_lin_fit_plot(filename):
             args.fig_name = filename.replace('.txt','') + '_Resid'
             args.plt_title = filename.replace('.txt','') + '_Resid'
             
-            Plotting.plot_multiple_curves(hv_data_1, args)
+            #Plotting.plot_multiple_curves(hv_data_1, args)
             
         else:
             ERR_STATEMENT = ERR_STATEMENT + "\nFile: " + filename + " not found"
@@ -84,9 +84,9 @@ if __name__ == '__main__':
     #filename = "Gauss_non_lin_fit.txt"
     #filename = 'Diode_non_lin_fit.txt'
     
-    #filename = 'Lorentzian_non_lin_fit.txt'    
-    #non_lin_fit_plot(filename)
-    
-    filename = 'Gaussian_non_lin_fit.txt'
+    filename = 'Lorentzian_non_lin_fit.txt'    
     non_lin_fit_plot(filename)
+    
+    #filename = 'Gaussian_non_lin_fit.txt'
+    #non_lin_fit_plot(filename)
     
