@@ -1769,7 +1769,7 @@ void testing::Lorentzian_data_fit_test()
 	std::vector<double> a_guess(npars, 0.0);
 	std::vector<int> ia(npars, 1); // tell the algorithm that you want to locate all parameters 
 
-	//ia[0] = 0; // search for params 0 and 2, fix param 1 value
+	ia[0] = 0; // search for params 0 and 2, fix param 1 value
 	a_guess[0] = xdata[indx_max]; 
 	//a_guess[1] = 1.0e-6 / spctr_max; // initial guesses for the parameters
 	a_guess[1] = 1.0; // initial guesses for the parameters
