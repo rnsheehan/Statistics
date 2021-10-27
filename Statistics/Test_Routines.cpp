@@ -1938,7 +1938,7 @@ void testing::Gaussian_data_fit_test()
 
 	int npts, n_rows, npars = 3, n_cols, indx_max = 0;
 	long idum = (-1011);
-	double spread = 0.1, spctr_max = -500.0, f_max = 0;
+	double spread = 0.01, spctr_max = -500.0, f_max = 0;
 
 	std::vector<std::vector<double>> the_data;
 
@@ -1957,7 +1957,7 @@ void testing::Gaussian_data_fit_test()
 	//ydata = vecut::get_col(the_data, 1);
 
 	for (int i = 0; i < n_rows; i++) {
-		if (the_data[i][0] > 77.0 && the_data[i][0] < 83.0) {
+		if (the_data[i][0] > 75.0 && the_data[i][0] < 85.0) {
 
 			xdata.push_back(the_data[i][0]);
 
