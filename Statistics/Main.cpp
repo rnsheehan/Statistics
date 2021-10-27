@@ -94,6 +94,8 @@ int main()
 
 	//testing::diode_voltage_data_fit(); 
 
+	//testing::Lorentzian_data_fit();
+	
 	testing::Lorentzian_data_fit_test();
 	
 	std::cout<<"Press enter to close console\n";

@@ -1592,7 +1592,7 @@ void testing::Lorentzian_data_fit()
 
 	double f = 80; 
 	double xc = 80; // Lorentzian centre
-	double G2 = 2.0; // Lorentzian HWHM
+	double G2 = 0.74; // Lorentzian HWHM
 	double y = 0.0; //computed Lorentzian value
 
 	int npars = 2;
@@ -1616,14 +1616,14 @@ void testing::Lorentzian_data_fit()
 	long idum = (-1011);
 	double spread, xlow, xhigh, deltax, xpos, yval;
 
-	xlow = 70.0; xhigh = 90.0; deltax = 0.05;
+	xlow = 70.0; xhigh = 90.0; deltax = 0.01;
 	npts = (int)(1.0 + ((xhigh - xlow) / deltax));
 
 	std::vector<double> xdata(npts, 0.0);
 	std::vector<double> ydata(npts, 0.0);
 	std::vector<double> sigdata(npts, 0.0);
 
-	spread = 0.05; // variance of the noise being added to the signal
+	spread = 0.1; // variance of the noise being added to the signal
 	xpos = xlow;
 	for (int i = 0; i < npts; i++) {
 
