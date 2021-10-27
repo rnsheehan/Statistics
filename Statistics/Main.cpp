@@ -97,6 +97,8 @@ int main()
 	//testing::Lorentzian_data_fit();
 	
 	testing::Lorentzian_data_fit_test();
+
+	//testing::Gaussian_data_fit_test(); 
 	
 	std::cout<<"Press enter to close console\n";
 	std::cin.get(); 

@@ -1,7 +1,7 @@
 Program Exit Explanation
 
-Error occurred: Wed Apr 04 21:35:25 2018
+Error occurred: Wed Oct 27 12:09:11 2021
 
-Error: void read_into_vector(std::string &filename, std::vector<double> &data)
-Cannot open: Data_1111.txt
+Error: void read_into_matrix(std::string &filename, std::vector<std::vector<double>> &data, int &n_rows, int &n_cols, bool loud = false)
+Cannot open: Smpl_LLM.csv
 

@@ -110,7 +110,7 @@ void probability::gser(double *gamser,double a,double x,double *gln)
 			int n;
 			double sum,del,ap;
 
-			static const int ITMAX=(100);
+			static const int ITMAX=(150);
 			static const double EPS=(3.0e-7);
 
 			*gln=gammln(a);

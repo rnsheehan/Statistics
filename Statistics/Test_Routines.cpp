@@ -1575,10 +1575,11 @@ void testing::Lorentzian(double x, std::vector<double>& a, double* y, std::vecto
 
 	try {
 		double t1 = x - a[0]; // ( x - x_{centre} )
-		double denom = template_funcs::DSQR(t1) + template_funcs::DSQR(a[1]); // ( x - x_{centre} )^{2} + (G/2)^{2}
+		double norm_factor = 1.0; // normalisaion factor can be set to 1.0 or PI
+		double denom = norm_factor * ( template_funcs::DSQR(t1) + template_funcs::DSQR(a[1]) ); // ( x - x_{centre} )^{2} + (G/2)^{2}
 		*y = a[1] / denom; // (G/2) / [ ( x - x_{centre} )^{2} + (G/2)^{2} ]
-		dyda[0] = (2.0 * t1 * (*y)) / a[1]; // \partial L / \partial x_{centre}
-		dyda[1] = (*y) * ( ( 1.0 / ( a[1] ) ) - 2.0*(*y) ); // \partial L / \partial G
+		dyda[0] = (2.0 * norm_factor * t1 * template_funcs::DSQR(*y) ) / a[1]; // \partial L / \partial x_{centre}
+		dyda[1] = (*y) * ( ( 1.0 / a[1]) -  ( 2.0 * norm_factor * (*y) ) ); // \partial L / \partial G
 	}
 	catch (std::invalid_argument& e) {
 		std::cerr << e.what();
@@ -1700,11 +1701,13 @@ void testing::Lorentzian_data_fit_test()
 	// R. Sheehan 26 - 10 - 2021
 
 	// Read in the measured spectral data
-	std::string filename = "Smpl_LLM_1.txt"; 
+	//std::string filename = "Sample_LLM.csv"; 
+	std::string filename = "Lorentz_iodeal.csv"; 
+	//std::string filename = "Smpl_LLM_1.txt"; 
 
 	int npts, n_rows, npars = 2, n_cols, indx_max = 0;
 	long idum = (-1011);
-	double spread = 0.3, spctr_max = -500.0, f_max = 0;
+	double spread = 0.1, spctr_max = -500.0, f_max = 0, f_start, f_end, scale_fac;
 	
 	std::vector<std::vector<double>> the_data; 
 
@@ -1721,13 +1724,20 @@ void testing::Lorentzian_data_fit_test()
 
 	//xdata = vecut::get_col(the_data, 0);
 	//ydata = vecut::get_col(the_data, 1);
-	
+
+	//scale_fac = 1.0e+3;  f_start = 77.0; f_end = 83.0;
+	//for (int i = 0; i < n_rows; i++) {
+	//	if (the_data[i][0] > f_start && the_data[i][0] < f_end) {
+	//		xdata.push_back(the_data[i][0]);
+	//		ydata.push_back(scale_fac * pow(10.0, the_data[i][1] / 10.0)); // convert the spectral data from dBm to mW scale and rescale it
+	//	}
+	//}
+
+	scale_fac = 1.0e+3;  f_start = 70.0 * scale_fac; f_end = 90.0 * scale_fac;
 	for (int i = 0; i < n_rows; i++) {
-		if (the_data[i][0] > 70.0 && the_data[i][0] < 90.0) {
-
-			xdata.push_back(the_data[i][0]); 
-
-			ydata.push_back( 1.0e+6 * pow(10.0, the_data[i][1] / 10.0) ); // convert the spectral data from dBm to mW scale and rescale it
+		if (the_data[i][0] > f_start && the_data[i][0] < f_end) {
+			xdata.push_back(the_data[i][0]/scale_fac); 
+			ydata.push_back(scale_fac * pow(10.0, the_data[i][1] / 10.0) ); // convert the spectral data from dBm to mW scale and rescale it
 		}
 	}
 
@@ -1745,6 +1755,10 @@ void testing::Lorentzian_data_fit_test()
 		else {
 			sigdata.push_back(spread); // sigdata cannot have zero values
 		}
+	}
+
+	for (int i = 0; i < npts; i++) {
+		ydata[i] /= spctr_max; 
 	}
 
 	// For the Lorentzian the HWHM value is given by 1/peak-value
@@ -1770,9 +1784,10 @@ void testing::Lorentzian_data_fit_test()
 	std::vector<int> ia(npars, 1); // tell the algorithm that you want to locate all parameters 
 
 	ia[0] = 0; // search for params 0 and 2, fix param 1 value
-	a_guess[0] = xdata[indx_max]; 
-	//a_guess[1] = 1.0e-6 / spctr_max; // initial guesses for the parameters
-	a_guess[1] = 1.0; // initial guesses for the parameters
+	//a_guess[0] = xdata[indx_max]; 
+	a_guess[0] = 80.0; 
+	a_guess[1] = 1.0 / spctr_max; // initial guesses for the parameters
+	//a_guess[1] = 1.5; // initial guesses for the parameters
 
 	// run the fitting algorithm
 	fit::non_lin_fit(xdata, ydata, sigdata, npts, a_guess, ia, npars, covar, alpha, &chisq, Lorentzian, ITMAX, TOL, true);
@@ -1790,4 +1805,222 @@ void testing::Lorentzian_data_fit_test()
 	xdata.clear(); ydata.clear(); sigdata.clear();
 	a_guess.clear(); ia.clear(); covar.clear(); alpha.clear();
 	data.clear(); the_data.clear(); 
+}
+
+void testing::Gaussian(double x, std::vector<double>& a, double* y, std::vector<double>& dyda, int& na)
+{
+	// Definition of the Gaussian function to be fitted
+	// a stores Gaussian parameters a = { amplitude, mean, standard deviation} = {A, b, c}
+	// a[0] = A, a[1] = b, a[2] = c
+	// c is related the Gaussian half-width at half-maximum (i.e. linewidth) HWHM = sqrt{ 2 log(2) } c ~ 1.17741 c
+	// Gaussian value is given by *y
+	// This Gaussian is not normalised, to normalise multiply *y by 1/(a c sqrt{pi})
+	// Normalisation not required for my purposes
+	// dyda is array that stores value of derivative of Lorentzian function wrt each parameter in a
+	// Dimensions of the arrays are a[0..na-1], dyda[0..na-1]
+	// na is no. parameters
+	// R. Sheehan 27 - 10 - 2021
+
+	try {
+		double t1 = x - a[1]; // ( x - b )
+		double t1sqr = template_funcs::DSQR(t1); // ( x - b )^{2}
+		double csqr = template_funcs::DSQR(a[2]); // c^{2}
+		double arg = (-1.0 * t1sqr) / (2.0*csqr); // -( x - b )^{2} / 2 c^{2}
+		*y = a[0] * exp(arg); // A exp( -( x - b )^{2} / 2 c^{2} )
+		dyda[0] = (*y)/a[0]; // \partial G / \partial A
+		dyda[1] = (t1 / csqr) * (*y); // \partial G / \partial b
+		dyda[2] = (t1sqr/(a[2]*csqr))*(*y); // \partial G / \partial c
+	}
+	catch (std::invalid_argument& e) {
+		std::cerr << e.what();
+	}
+}
+
+void testing::Gaussian_data_fit()
+{
+	// Apply LM method to test Gaussian data
+	// R. Sheehan 27 - 10 - 2021
+
+	double f = 82;
+	double A = 1.5; // Amplitude
+	double b = 80; // Gaussian centre
+	double c = 0.5; // Gaussian width
+	double y = 0.0; //computed Gaussian value
+
+	int npars = 3;
+	std::vector<double> a(npars, 0.0);
+	std::vector<double> dyda(npars, 0.0);
+
+	// Initial guesses for the parameters
+	a[0] = A; a[1] = b; a[2] = c; 
+
+	testing::Gaussian(f, a, &y, dyda, npars);
+
+	std::cout << "Gaussian Fit Test Evaluation\n";
+	std::cout << "Gaussian Frequency value: " << f << " MHz\n";
+	std::cout << "Gaussian Spectrum value: " << y << "\n";
+	std::cout << "Der wrt A: " << dyda[0] << "\n";
+	std::cout << "Der wrt b: " << dyda[1] << "\n";
+	std::cout << "Der wrt c: " << dyda[2] << "\n\n";
+	std::cout << "Gaussian Equation Fit\n";
+
+	// Generate data to use in the fit process
+	int npts;
+	long idum = (-1011);
+	double spread, xlow, xhigh, deltax, xpos, yval;
+
+	xlow = 75.0; xhigh = 85.0; deltax = 0.1;
+	npts = (int)(1.0 + ((xhigh - xlow) / deltax));
+
+	std::vector<double> xdata(npts, 0.0);
+	std::vector<double> ydata(npts, 0.0);
+	std::vector<double> sigdata(npts, 0.0);
+
+	spread = 0.001; // variance of the noise being added to the signal
+	xpos = xlow;
+	for (int i = 0; i < npts; i++) {
+
+		Gaussian(xpos, a, &yval, dyda, npars); // evaluate the Lorentzian function
+
+		xdata[i] = xpos;
+
+		yval *= rng::gasdev1(&idum, 1.0, template_funcs::DSQR(spread)); // add noise to the signal value
+
+		ydata[i] = yval;
+
+		sigdata[i] = fabs(yval) > 0.0 ? spread * yval : spread; // sigdata cannot have zero values
+
+		xpos += deltax;
+	}
+
+	// Perform the best it search for the data set
+	int ITMAX = 10;
+
+	double TOL = 0.001;
+	double chisq = 0.0;
+
+	// Declare the necessary arrays
+	std::vector<std::vector<double>> covar = vecut::array_2D(npars, npars);
+	std::vector<std::vector<double>> alpha = vecut::array_2D(npars, npars);
+
+	// define the initial guesses to the parameters to be determined
+	std::vector<double> a_guess(npars, 0.0);
+	std::vector<int> ia(npars, 1); // tell the algorithm that you want to locate all parameters 
+
+	ia[0] = 0; ia[1] = 0; // search for params 0 and 2, fix param 1 value
+	a_guess[0] = A; a_guess[1] = b; a_guess[2] = 1.0; // initial guesses for the parameters, fit routine is sufficiently robust
+
+	// run the fitting algorithm
+	fit::non_lin_fit(xdata, ydata, sigdata, npts, a_guess, ia, npars, covar, alpha, &chisq, Gaussian, ITMAX, TOL, true);
+
+	// compute the residuals for the fit
+	std::vector<std::vector<double>> data;
+	fit::residuals(xdata, ydata, sigdata, npts, a_guess, npars, Gaussian, data);
+
+	// output the residuals 
+	std::string thefile = "Gaussian_non_lin_fit.txt";
+
+	int nrows = 5;
+	vecut::write_into_file(thefile, data, nrows, npts);
+
+	xdata.clear(); ydata.clear(); sigdata.clear();
+	a_guess.clear(); ia.clear(); covar.clear(); alpha.clear();
+	a.clear(); data.clear();
+}
+
+void testing::Gaussian_data_fit_test()
+{
+	// Apply LM method to measured linewidth spectrum data
+	// R. Sheehan 27 - 10 - 2021
+
+	// Read in the measured spectral data
+	std::string filename = "Smpl_LLM_1.txt";
+
+	int npts, n_rows, npars = 3, n_cols, indx_max = 0;
+	long idum = (-1011);
+	double spread = 0.1, spctr_max = -500.0, f_max = 0;
+
+	std::vector<std::vector<double>> the_data;
+
+	vecut::read_into_matrix(filename, the_data, n_rows, n_cols, true);
+
+	// Estimate sigdata
+	std::vector<double> xdata;
+	std::vector<double> ydata;
+	std::vector<double> sigdata;
+
+	// for some reason the copy was throwing an exception
+	//std::copy( xdata.begin(), xdata.end(), vecut::get_col(the_data, 0) ); 
+	//std::copy( ydata.begin(), ydata.end(), vecut::get_col(the_data, 1) ); 
+
+	//xdata = vecut::get_col(the_data, 0);
+	//ydata = vecut::get_col(the_data, 1);
+
+	for (int i = 0; i < n_rows; i++) {
+		if (the_data[i][0] > 77.0 && the_data[i][0] < 83.0) {
+
+			xdata.push_back(the_data[i][0]);
+
+			ydata.push_back(1.0e+6 * pow(10.0, the_data[i][1] / 10.0)); // convert the spectral data from dBm to mW scale and rescale it
+		}
+	}
+
+	npts = static_cast<int>(xdata.size());
+
+	for (int i = 0; i < npts; i++) {
+		if (ydata[i] > spctr_max) {
+			spctr_max = ydata[i];
+			indx_max = i;
+		}
+
+		if (fabs(ydata[i]) > 0.0) {
+			sigdata.push_back(spread * ydata[i]);
+		}
+		else {
+			sigdata.push_back(spread); // sigdata cannot have zero values
+		}
+	}
+
+	std::cout << "Max value in data set: " << spctr_max << "\n";
+	std::cout << "Corresponding Frequency: " << xdata[indx_max] << "\n\n";
+
+	// Perform the best it search for the data set
+	int ITMAX = 10;
+
+	double TOL = 0.001;
+	double chisq = 0.0;
+
+	// Declare the necessary arrays
+	std::vector<std::vector<double>> covar = vecut::array_2D(npars, npars);
+	std::vector<std::vector<double>> alpha = vecut::array_2D(npars, npars);
+
+	// define the initial guesses to the parameters to be determined
+	std::vector<double> a_guess(npars, 0.0);
+	std::vector<int> ia(npars, 1); // tell the algorithm that you want to locate all parameters 
+
+	ia[0] = 0; ia[1] = 0;
+	a_guess[0] = spctr_max;
+	//a_guess[1] = xdata[indx_max];
+	a_guess[1] = 80;
+	a_guess[2] = 1.0; // initial guesses for the parameters
+
+	// run the fitting algorithm
+	fit::non_lin_fit(xdata, ydata, sigdata, npts, a_guess, ia, npars, covar, alpha, &chisq, Gaussian, ITMAX, TOL, true);
+
+	std::cout << "FWHM: " << 2.0 * sqrt(2.0 * log(2.0)) * a_guess[2] << "\n"; 
+	std::cout << "HWHM: " << sqrt(2.0 * log(2.0)) * a_guess[2] << "\n\n"; 
+
+	// compute the residuals for the fit
+	std::vector<std::vector<double>> data;
+	fit::residuals(xdata, ydata, sigdata, npts, a_guess, npars, Gaussian, data);
+
+	// output the residuals 
+	std::string thefile = "Gaussian_non_lin_fit.txt";
+
+	int nrows = 5;
+	vecut::write_into_file(thefile, data, nrows, npts);
+
+	xdata.clear(); ydata.clear(); sigdata.clear();
+	a_guess.clear(); ia.clear(); covar.clear(); alpha.clear();
+	data.clear(); the_data.clear();
 }
