@@ -1703,9 +1703,9 @@ void testing::Lorentzian_data_fit_test()
 	// R. Sheehan 26 - 10 - 2021
 
 	// Read in the measured spectral data
-	std::string filename = "Sample_LLM.csv"; 
+	//std::string filename = "Sample_LLM.csv"; 
 	//std::string filename = "Lorentz_iodeal.csv"; // this is the same data set as Sample_LLM.csv
-	//std::string filename = "Smpl_LLM_1.txt"; 
+	std::string filename = "Smpl_LLM_2.txt"; 
 
 	int npts, n_rows, npars = 3, n_cols, indx_max = 0;
 	long idum = (-1011);
@@ -1727,21 +1727,21 @@ void testing::Lorentzian_data_fit_test()
 	//xdata = vecut::get_col(the_data, 0);
 	//ydata = vecut::get_col(the_data, 1);
 
-	//scale_fac = 1.0e+6;  f_start = 77.0; f_end = 83.0;
-	//for (int i = 0; i < n_rows; i++) {
-	//	if (the_data[i][0] > f_start && the_data[i][0] < f_end) {
-	//		xdata.push_back(the_data[i][0]);
-	//		ydata.push_back(scale_fac * pow(10.0, the_data[i][1] / 10.0)); // convert the spectral data from dBm to mW scale and rescale it
-	//	}
-	//}
-
-	scale_fac = 1.0e+3;  f_start = 77.0 * scale_fac; f_end = 83.0 * scale_fac;
+	scale_fac = 1.0e+6;  f_start = 75.0; f_end = 85.0;
 	for (int i = 0; i < n_rows; i++) {
 		if (the_data[i][0] > f_start && the_data[i][0] < f_end) {
-			xdata.push_back(the_data[i][0]/scale_fac); 
-			ydata.push_back(scale_fac * pow(10.0, the_data[i][1] / 10.0) ); // convert the spectral data from dBm to mW scale and rescale it
+			xdata.push_back(the_data[i][0]);
+			ydata.push_back(scale_fac * pow(10.0, the_data[i][1] / 10.0)); // convert the spectral data from dBm to mW scale and rescale it
 		}
 	}
+
+	//scale_fac = 1.0e+3;  f_start = 77.0 * scale_fac; f_end = 83.0 * scale_fac;
+	//for (int i = 0; i < n_rows; i++) {
+	//	if (the_data[i][0] > f_start && the_data[i][0] < f_end) {
+	//		xdata.push_back(the_data[i][0]/scale_fac); 
+	//		ydata.push_back(scale_fac * pow(10.0, the_data[i][1] / 10.0) ); // convert the spectral data from dBm to mW scale and rescale it
+	//	}
+	//}
 
 	npts = static_cast<int>( xdata.size() ); 
 
@@ -1796,7 +1796,7 @@ void testing::Lorentzian_data_fit_test()
 	//a_guess[0] = xdata[indx_max]; 
 	a_guess[0] = 1.5; 
 	a_guess[1] = 80;
-	a_guess[2] = 0.5; // initial guesses for the parameters
+	a_guess[2] = 1; // initial guesses for the parameters
 	//a_guess[2] = 1.5; // initial guesses for the parameters
 
 	// run the fitting algorithm
@@ -1948,11 +1948,12 @@ void testing::Gaussian_data_fit_test()
 	// R. Sheehan 27 - 10 - 2021
 
 	// Read in the measured spectral data
-	std::string filename = "Smpl_LLM_1.txt";
+	//std::string filename = "Smpl_LLM_1.txt";
+	std::string filename = "Smpl_LLM_2.txt";
 
 	int npts, n_rows, npars = 3, n_cols, indx_max = 0;
 	long idum = (-1011);
-	double spread = 0.01, spctr_max = -500.0, f_max = 0;
+	double spread = 0.01, spctr_max = -500.0, f_max = 0, f_start, f_end, scale_fac;
 
 	std::vector<std::vector<double>> the_data;
 
@@ -1970,12 +1971,11 @@ void testing::Gaussian_data_fit_test()
 	//xdata = vecut::get_col(the_data, 0);
 	//ydata = vecut::get_col(the_data, 1);
 
+	scale_fac = 1.0e+6;  f_start = 75.0; f_end = 85.0;
 	for (int i = 0; i < n_rows; i++) {
-		if (the_data[i][0] > 75.0 && the_data[i][0] < 85.0) {
-
+		if (the_data[i][0] > f_start && the_data[i][0] < f_end) {
 			xdata.push_back(the_data[i][0]);
-
-			ydata.push_back(1.0e+6 * pow(10.0, the_data[i][1] / 10.0)); // convert the spectral data from dBm to mW scale and rescale it
+			ydata.push_back(scale_fac * pow(10.0, the_data[i][1] / 10.0)); // convert the spectral data from dBm to mW scale and rescale it
 		}
 	}
 
