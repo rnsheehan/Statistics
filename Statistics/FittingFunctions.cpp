@@ -239,6 +239,7 @@ void fit::non_lin_fit(std::vector<double> &x, std::vector<double> &y, std::vecto
 	// Levenberg-Marquardt method, attempting to reduce the value chi^{2} of a fit between a set of data points x[0..na-1], y[na-1]
 	// with individual standard deviations sig[0..na-1] and a nonlinear function dependent on ma coefficients a[0..ma-1]
 	// R. Sheehan 13 - 7 - 2018
+	// 
 	// Fixed the covariance matrix error and the error which meant that single-parameter fits could not be performed. 
 	// Feeling pleased
 	// R. Sheehan 22 - 11 - 2019
@@ -247,6 +248,8 @@ void fit::non_lin_fit(std::vector<double> &x, std::vector<double> &y, std::vecto
 	// R. Sheehan 19 - 10 - 2021
 
 	// What can you do if you do not know the measurement error \sigma? 
+	// Method will not work without some estimate of sigma
+	// R. Sheehan 26 - 10 - 2021
 
 	try {
 		bool c1 = ndata > 3 ? true : false;
@@ -579,13 +582,95 @@ void fit::mrqcof(std::vector<double> &x, std::vector<double> &y, std::vector<dou
 	}
 }
 
-void fit::goodness_of_fit()
+void fit::goodness_of_fit(std::vector<double>& x, std::vector<double>& y, std::vector<double>& sig, int& ndata, std::vector<double>& a, int& ma, void(*funcs)(double, std::vector<double>&, double*, std::vector<double>&, int&), double* chisq, double* nu, double *rsqr, double* gof)
 {
+	// Given a set of data points x[0..na - 1], y[na - 1] with individual standard deviations sig[0..na-1] and a nonlinear function dependent on ma coefficients a[0..ma-1]
+	// Compute the value of chi^{2} for the fit, degrees of freedom nu = ndata - no. fitted parameters, the goodness of fit probability, R^{2} coefficient
+
+	// The following contains some useful info	
+	// https://en.wikipedia.org/wiki/All_models_are_wrong
+	// https://en.wikipedia.org/wiki/Reduced_chi-squared_statistic
+	// https://en.wikipedia.org/wiki/Coefficient_of_determination
+	// https://en.wikipedia.org/wiki/Goodness_of_fit
+	// https://en.wikipedia.org/wiki/Kitchen_sink_regression
+	// https://en.wikipedia.org/wiki/Data_dredging
+
+	// R. Sheehan 1 - 11 - 2021
+	
 	// To characterise a fit as good
-	// nu = no. data points - no. fit parameters
-	// chi^{2} / nu ~ 1
-	// q = gammq(nu/2, chi^{2}/2) >= 0.1 // // goodness of fit probability
-	// R^{2} ~ 1
+	// nu = no. data points - no. fit parameters = degrees of freedom
+	// 
+	// In general you want chi^{2} / nu ~ 1
+	// chi^{2} / nu is the reduced chi^{2} statistic chi^{2} per degree of freedom
+	// As a rule of thumb, when measurement variance is known a priori chi^{2} / nu >> 1 implies a poor fit, chi^{2} / nu > 1 indicates fit has not fully
+	// captured the data, or that the measurement variance has been underestimated. chi^{2} / nu ~ 1 indicates that the match between measurement and
+	// estimates is in line with measurement variance, aka good fit. chi^{2} / nu < 1 indicates the model is over-fitting the data, either the model is 
+	// improperly fitting the noise or measurement variance has been overestimated. When the variance of the measurement error is only partially known, 
+	// the reduced chi-squared may serve as a correction estimated a posteriori. 
+	// 
+	// In general you want R^{2} ~ 1
+	// The coefficient of determination or R^{2}, is the proportion of the variation in the dependent variable that is predictable from the independent variable(s). 
+	// It provides a measure of how well observed outcomes are replicated by the model, based on the proportion of total variation of outcomes explained by the model. 
+	// R^{2} ~ 1 indicates a good fit, R^{2} ~ 0 idicates a bad fit, R^{2} outside the range [0, 1] also indicates a bad fit
+	// 
+	// q = gammq(nu/2, chi^{2}/2) > 0.1 // goodness of fit probability
+	// "q measures the probability that a value of chi^{2} as poor as the one computed for the fit should occur by chance. 
+	// q > 0.1 implies the gof is believable, q > 0.001  implies the fit may be acceptable if errors are nonnormal or have been underestimated.
+	// q < 0.001 implies the fitting procedure may be called into question. " - NRinC, sect 15.2. 
+
+	try {
+		bool c1 = ndata > 3 ? true : false;
+		bool c2 = (int)(x.size()) == ndata ? true : false;
+		bool c3 = (int)(y.size()) == ndata ? true : false;
+		bool c4 = (int)(sig.size()) == ndata ? true : false;
+		bool c5 = ma > 0 ? true : false;
+		bool c6 = (int)(a.size()) == ma ? true : false;
+
+		bool c11 = c1 && c2 && c3 && c4 && c5 && c6 ? true : false;
+
+		if (c11) {
+			
+			// declare parameters
+			double ei = 0.0, ybar = 0.0, yval = 0.0, ssres = 0.0, sstot = 0.0;
+			std::vector<double> dyda(ma, 0.0);
+
+			// Compute the mean observed value
+			for (int i = 0; i < ndata; i++) ybar += y[i]; 
+			ybar /= ndata; 
+			 
+			// compute the values of the sums needed to compute the statistics
+			for (int i = 0; i < ndata; i++) {
+				(*funcs)(x[i], a, &yval, dyda, ma);
+				ei = y[i] - yval; // difference between observed value and model value
+				*chisq += template_funcs::DSQR(ei / sig[i]); // compute the value of the chi^{2} coefficient
+				ssres += template_funcs::DSQR(ei); // compute the residual sum of squares
+				sstot += template_funcs::DSQR(y[i] - ybar); // compute the total sum of squares
+			}
+			*rsqr = 1.0 - (ssres / sstot); 
+			*gof = probability::gammq(0.5 * (*nu), 0.5 * (*chisq)); // goodness of fit probability
+
+			std::cout << "\nGoodness-of-fit statistics\n"; 
+			std::cout << "The chi-sq value for the fit is " << *chisq << "\n";
+			std::cout << "nu for the fit is " << *nu << "\n";
+			std::cout << "chi-sq / nu = " << *chisq / *nu << "\n";
+			std::cout << "goodness of fit = " << *gof << "\n";
+			std::cout << "coefficient of determination = " << *rsqr << "\n\n";
+		}
+		else {
+			std::string reason = "Error: fit::residuals()\n";
+			if (!c1) reason += "No. data points is not correct ndata = " + template_funcs::toString(ndata) + "\n";
+			if (!c2) reason += "x does not have correct size x.size() = " + template_funcs::toString(x.size()) + "\n";
+			if (!c3) reason += "y does not have correct size y.size() = " + template_funcs::toString(y.size()) + "\n";
+			if (!c4) reason += "sig does not have correct size sig.size() = " + template_funcs::toString(sig.size()) + "\n";
+			if (!c5) reason += "No. fit parameters is not correct ma = " + template_funcs::toString(ma) + "\n";
+			if (!c6) reason += "a does not have correct size a.size() = " + template_funcs::toString(a.size()) + "\n";
+
+			throw std::invalid_argument(reason);
+		}
+	}
+	catch (std::invalid_argument& e) {
+		std::cerr << e.what();
+	}
 }
 
 void fit::residuals(std::vector<double>& x, std::vector<double>& y, std::vector<double>& sig, int& ndata, std::vector<double>& a, int& ma, void(*funcs)(double, std::vector<double>&, double*, std::vector<double>&, int&), std::vector<std::vector<double>>& data)

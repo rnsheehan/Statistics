@@ -2,6 +2,13 @@
 #include "Attach.h"
 #endif
 
+// info on the pragma directive
+// https://docs.microsoft.com/en-us/cpp/preprocessor/pragma-directives-and-the-pragma-keyword?view=msvc-160
+// https://gcc.gnu.org/onlinedocs/cpp/Pragmas.html
+#pragma warning(disable : 4834) // turn off warning that tells you to use the return value of std::remove_if
+#pragma warning(disable : 26451) // turn off warning that tells you about possible arithmetic overflow
+
+
 void testing::compute_moments()
 {
 	// Compute the moments of some of the sample data sets
@@ -1593,7 +1600,7 @@ void testing::Lorentzian_data_fit()
 	// R. Sheehan 21 - 10 - 2021
 
 	double f = 80; 
-	double A = 2; // Lorentzian amplitude
+	double A = 1; // Lorentzian amplitude
 	double xc = 80; // Lorentzian centre
 	double G2 = 0.74; // Lorentzian HWHM
 	double y = 0.0; //computed Lorentzian value
@@ -1619,7 +1626,7 @@ void testing::Lorentzian_data_fit()
 	long idum = (-1011);
 	double spread, xlow, xhigh, deltax, xpos, yval;
 
-	xlow = 70.0; xhigh = 90.0; deltax = 0.01;
+	xlow = 70.0; xhigh = 90.0; deltax = 0.1;
 	npts = (int)(1.0 + ((xhigh - xlow) / deltax));
 
 	std::vector<double> xdata(npts, 0.0);
@@ -1692,6 +1699,10 @@ void testing::Lorentzian_data_fit()
 	int nrows = 5;
 	vecut::write_into_file(thefile, data, nrows, npts);
 
+	// take a look at the goodness of fit statistics
+	double chisqr = 0.0, rsqr = 0.0, dof = static_cast<int>(npts - npars), gof = 0.0; 
+	fit::goodness_of_fit(xdata, ydata, sigdata, npts, a_guess, npars, Lorentzian, &chisqr, &dof, &rsqr, &gof); 
+
 	xdata.clear(); ydata.clear(); sigdata.clear();
 	a_guess.clear(); ia.clear(); covar.clear(); alpha.clear();
 	a.clear(); data.clear(); 
@@ -1705,7 +1716,7 @@ void testing::Lorentzian_data_fit_test()
 	// Read in the measured spectral data
 	//std::string filename = "Sample_LLM.csv"; 
 	//std::string filename = "Lorentz_iodeal.csv"; // this is the same data set as Sample_LLM.csv
-	std::string filename = "Smpl_LLM_2.txt"; 
+	std::string filename = "Smpl_LLM_1.txt"; 
 
 	int npts, n_rows, npars = 3, n_cols, indx_max = 0;
 	long idum = (-1011);
@@ -1727,7 +1738,7 @@ void testing::Lorentzian_data_fit_test()
 	//xdata = vecut::get_col(the_data, 0);
 	//ydata = vecut::get_col(the_data, 1);
 
-	scale_fac = 1.0e+6;  f_start = 75.0; f_end = 85.0;
+	scale_fac = 1.0e+6;  f_start = 70.0; f_end = 90.0;
 	for (int i = 0; i < n_rows; i++) {
 		if (the_data[i][0] > f_start && the_data[i][0] < f_end) {
 			xdata.push_back(the_data[i][0]);
@@ -1815,6 +1826,10 @@ void testing::Lorentzian_data_fit_test()
 
 	int nrows = 5;
 	vecut::write_into_file(thefile, data, nrows, npts);
+
+	// take a look at the goodness of fit statistics
+	double chisqr = 0.0, rsqr = 0.0, dof = static_cast<int>(npts - npars), gof = 0.0;
+	fit::goodness_of_fit(xdata, ydata, data[4], npts, a_guess, npars, Lorentzian, &chisqr, &dof, &rsqr, &gof);
 
 	xdata.clear(); ydata.clear(); sigdata.clear();
 	a_guess.clear(); ia.clear(); covar.clear(); alpha.clear();
@@ -1948,8 +1963,8 @@ void testing::Gaussian_data_fit_test()
 	// R. Sheehan 27 - 10 - 2021
 
 	// Read in the measured spectral data
-	//std::string filename = "Smpl_LLM_1.txt";
-	std::string filename = "Smpl_LLM_2.txt";
+	std::string filename = "Smpl_LLM_1.txt";
+	//std::string filename = "Smpl_LLM_2.txt";
 
 	int npts, n_rows, npars = 3, n_cols, indx_max = 0;
 	long idum = (-1011);
@@ -1971,7 +1986,7 @@ void testing::Gaussian_data_fit_test()
 	//xdata = vecut::get_col(the_data, 0);
 	//ydata = vecut::get_col(the_data, 1);
 
-	scale_fac = 1.0e+6;  f_start = 75.0; f_end = 85.0;
+	scale_fac = 1.0e+6;  f_start = 70.0; f_end = 90.0;
 	for (int i = 0; i < n_rows; i++) {
 		if (the_data[i][0] > f_start && the_data[i][0] < f_end) {
 			xdata.push_back(the_data[i][0]);
@@ -2033,6 +2048,10 @@ void testing::Gaussian_data_fit_test()
 
 	int nrows = 5;
 	vecut::write_into_file(thefile, data, nrows, npts);
+
+	// take a look at the goodness of fit statistics
+	double chisqr = 0.0, rsqr = 0.0, dof = static_cast<int>(npts - npars), gof = 0.0;
+	fit::goodness_of_fit(xdata, ydata, data[4], npts, a_guess, npars, Lorentzian, &chisqr, &dof, &rsqr, &gof);
 
 	xdata.clear(); ydata.clear(); sigdata.clear();
 	a_guess.clear(); ia.clear(); covar.clear(); alpha.clear();
