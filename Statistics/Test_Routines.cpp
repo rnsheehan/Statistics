@@ -1716,7 +1716,7 @@ void testing::Lorentzian_data_fit_test()
 	// Read in the measured spectral data
 	//std::string filename = "Sample_LLM.csv"; 
 	//std::string filename = "Lorentz_iodeal.csv"; // this is the same data set as Sample_LLM.csv
-	std::string filename = "Smpl_LLM_1.txt"; 
+	std::string filename = "Smpl_LLM_5.txt"; 
 
 	int npts, n_rows, npars = 3, n_cols, indx_max = 0;
 	long idum = (-1011);
@@ -1814,7 +1814,7 @@ void testing::Lorentzian_data_fit_test()
 	fit::non_lin_fit(xdata, ydata, sigdata, npts, a_guess, ia, npars, covar, alpha, &chisq, Lorentzian, ITMAX, TOL, true);
 
 	std::cout << "Fitted centre freq: " << a_guess[1] << " MHz\n"; 
-	std::cout << "Computed peak val: " << a_guess[0] / a_guess[2] << "\n"; 
+	std::cout << "Computed peak val: " << a_guess[0] / a_guess[2] << "uW\n"; 
 	std::cout << "Computed HWHM: " << a_guess[2] << " MHz\n\n"; 
 
 	// compute the residuals for the fit
