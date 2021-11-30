@@ -1716,11 +1716,12 @@ void testing::Lorentzian_data_fit_test()
 	// Read in the measured spectral data
 	//std::string filename = "Sample_LLM.csv"; 
 	//std::string filename = "Lorentz_iodeal.csv"; // this is the same data set as Sample_LLM.csv
-	std::string filename = "Smpl_LLM_8.txt"; 
+	//std::string filename = "Smpl_LLM_7.txt";
+	std::string filename = "LLM_Spctrm_I_65.txt";
 
 	int npts, n_rows, npars = 3, n_cols, indx_max = 0;
 	long idum = (-1011);
-	double spread = 0.1, spctr_max = -500.0, f_max = 0, f_start, f_end, scale_fac;
+	double spread = 0.15, spctr_max = -500.0, f_max = 0, f_start, f_end, scale_fac;
 	
 	std::vector<std::vector<double>> the_data; 
 
@@ -1805,9 +1806,9 @@ void testing::Lorentzian_data_fit_test()
 
 	ia[1] = 0; // search for params 0 and 2, fix param 1 value
 	//a_guess[0] = xdata[indx_max]; 
-	a_guess[0] = 1.5; 
+	a_guess[0] = 10*spctr_max;
 	a_guess[1] = 80;
-	a_guess[2] = 1; // initial guesses for the parameters
+	a_guess[2] = 3; // initial guesses for the parameters
 	//a_guess[2] = 1.5; // initial guesses for the parameters
 
 	// run the fitting algorithm
@@ -1830,10 +1831,6 @@ void testing::Lorentzian_data_fit_test()
 	// take a look at the goodness of fit statistics
 	double chisqr = 0.0, rsqr = 0.0, dof = static_cast<int>(npts - npars), gof = 0.0;
 	fit::goodness_of_fit(xdata, ydata, data[4], npts, a_guess, npars, Lorentzian, &chisqr, &dof, &rsqr, &gof);
-
-	xdata.clear(); ydata.clear(); sigdata.clear();
-	a_guess.clear(); ia.clear(); covar.clear(); alpha.clear();
-	data.clear(); the_data.clear(); 
 }
 
 void testing::Gaussian(double x, std::vector<double>& a, double* y, std::vector<double>& dyda, int& na)
@@ -2061,23 +2058,234 @@ void testing::Gaussian_data_fit_test()
 void testing::Voigt(double x, std::vector<double>& a, double* y, std::vector<double>& dyda, int& na)
 {
 	// Definition of the Voigt function to be fitted
-	// a stores Voigt parameters a = { h, x_{centre}, g}
-	// a[0] = h, a[1] = x_{centre}, a[2] = g
-	// g is the Voigt half-width at half-maximum (i.e. linewidth)
+	// a stores Voigt parameters a = { h, x_{centre}, g, sigma}
+	// a[0] = h, a[1] = x_{centre}, a[2] = g, a[3] = sigma
+	// h is an amplitude fitting factor
+	// x_centre is the centre of the Voigt frunction
+	// g is the half-width at half-maximum of the Lorentzian portion of Voigt
+	// sigma is the std. dev. of the Gaussian portion of Voigt HWHM_{Gauss} = sqrt( 2 log(2) ) c
+	// It should be possible to express HWHM_{Voigt} in terms of g and sigma
 	// Voigt value is given by *y
 	// dyda is array that stores value of derivative of Voigt function wrt each parameter in a
 	// Dimensions of the arrays are a[0..na-1], dyda[0..na-1]
 	// na is no. parameters
-	// R. Sheehan 29 - 11 - 2021
+	// R. Sheehan 30 - 11 - 2021
 
 	try {
-		std::complex<double> z = ( (x - a[1] + 0.5 * eye * a[2]) * (2.0 * sqrt(log10(2.0)) / a[2]) );
-		
-		*y = real( a[0] * Faddeeva::w(z) );
+		std::complex<double> z = ( (x - a[1] + eye * a[2]) / a[3]  ); // z = (x - x_{0} + i g) / sigma
+		std::complex<double> W = Faddeeva::w(z); // w(z) = exp(-z^{2}) Erfc(-i z)
+		std::complex<double> dW = ((2.0 * eye) / SQRT_PI) - ( 2.0 * z * W ); // dw / dz by definition
+		double h_sig = a[0] / a[3]; // h / sigma
+
+		*y = real( a[0] * W ); // V = re( h w(z) )
+		dyda[0] = real(W); // \partial V / \partial h
+		dyda[1] = real(-1.0 * h_sig * dW); // \partial V / \partial x_{0} = - \partial V / \partial x
+		dyda[2] = real(eye * h_sig * dW); // \partial V / \partial g
+		dyda[3] = real(-1.0 * h_sig * z * dW); // \partial V / \partial sigma
 	}
 	catch (std::invalid_argument& e) {
 		std::cerr << e.what();
 	}
 
 	
+}
+
+void testing::Voigt_data_fit()
+{
+	// Apply LM method to test Voigt data
+	// R. Sheehan 30 - 11 - 2021
+
+	double f = 81;
+	double h = 1.5; // Amplitude
+	double x0 = 80; // Voigt centre
+	double g = 1.0; // Lorentzian HWHM
+	double sigma = 1.5; // Gaussian std. dev.
+	double y = 0.0; //computed Voigt value
+
+	int npars = 4;
+	std::vector<double> a(npars, 0.0);
+	std::vector<double> dyda(npars, 0.0);
+
+	// Initial guesses for the parameters
+	a[0] = h; a[1] = x0; a[2] = g; a[3] = sigma;
+
+	testing::Voigt(f, a, &y, dyda, npars);
+
+	std::cout << "Voigt Fit Test Evaluation\n";
+	std::cout << "Voigt Frequency value: " << f << " MHz\n";
+	std::cout << "Voigt Spectrum value: " << y << "\n";
+	std::cout << "Der wrt h: " << dyda[0] << "\n";
+	std::cout << "Der wrt x0: " << dyda[1] << "\n";
+	std::cout << "Der wrt g: " << dyda[2] << "\n";
+	std::cout << "Der wrt sigma: " << dyda[3] << "\n\n";
+	std::cout << "Voigt Equation Fit\n";
+
+	// Generate data to use in the fit process
+	int npts;
+	long idum = (-1011);
+	double spread, xlow, xhigh, deltax, xpos, yval;
+
+	xlow = 70.0; xhigh = 90.0; deltax = 0.01;
+	npts = (int)(1.0 + ((xhigh - xlow) / deltax));
+
+	std::vector<double> xdata(npts, 0.0);
+	std::vector<double> ydata(npts, 0.0);
+	std::vector<double> sigdata(npts, 0.0);
+
+	spread = 0.1; // variance of the noise being added to the signal
+	xpos = xlow;
+	for (int i = 0; i < npts; i++) {
+
+		Voigt(xpos, a, &yval, dyda, npars); // evaluate the Lorentzian function
+
+		xdata[i] = xpos;
+
+		yval *= rng::gasdev1(&idum, 1.0, template_funcs::DSQR(spread)); // add noise to the signal value
+
+		ydata[i] = yval;
+
+		sigdata[i] = fabs(yval) > 0.0 ? spread * yval : spread; // sigdata cannot have zero values
+
+		xpos += deltax;
+	}
+
+	// Perform the best it search for the data set
+	int ITMAX = 10;
+
+	double TOL = 0.001;
+	double chisq = 0.0;
+
+	// Declare the necessary arrays
+	std::vector<std::vector<double>> covar = vecut::array_2D(npars, npars);
+	std::vector<std::vector<double>> alpha = vecut::array_2D(npars, npars);
+
+	// define the initial guesses to the parameters to be determined
+	std::vector<double> a_guess(npars, 0.0);
+	std::vector<int> ia(npars, 1); // tell the algorithm that you want to locate all parameters 
+
+	//ia[1] = 0; // search for params 0 and 2, fix param 1 value
+	a_guess[0] = 3*h; 
+	a_guess[1] = x0; 
+	a_guess[2] = 2*g; 
+	a_guess[3] = 2*g; // initial guesses for the parameters, fit routine is sufficiently robust
+
+	// run the fitting algorithm
+	fit::non_lin_fit(xdata, ydata, sigdata, npts, a_guess, ia, npars, covar, alpha, &chisq, Voigt, ITMAX, TOL, true);
+
+	// compute the residuals for the fit
+	std::vector<std::vector<double>> data;
+	fit::residuals(xdata, ydata, sigdata, npts, a_guess, npars, Voigt, data);
+
+	// output the residuals 
+	std::string thefile = "Voigt_non_lin_fit.txt";
+
+	int nrows = 5;
+	vecut::write_into_file(thefile, data, nrows, npts);
+
+	xdata.clear(); ydata.clear(); sigdata.clear();
+	a_guess.clear(); ia.clear(); covar.clear(); alpha.clear();
+	a.clear(); data.clear();
+}
+
+void testing::Voigt_data_fit_test()
+{
+	// Apply LM method to measured linewidth spectrum data
+	// R. Sheehan 27 - 10 - 2021
+
+	// Read in the measured spectral data
+	//std::string filename = "Smpl_LLM_7.txt";
+	std::string filename = "LLM_Spctrm_I_65.txt";
+	
+	int npts, n_rows, npars = 4, n_cols, indx_max = 0;
+	long idum = (-1011);
+	double spread = 0.15, spctr_max = -500.0, f_max = 0, f_start, f_end, scale_fac;
+
+	std::vector<std::vector<double>> the_data;
+
+	vecut::read_into_matrix(filename, the_data, n_rows, n_cols, true);
+
+	// Estimate sigdata
+	std::vector<double> xdata;
+	std::vector<double> ydata;
+	std::vector<double> sigdata;
+
+	// for some reason the copy was throwing an exception
+	//std::copy( xdata.begin(), xdata.end(), vecut::get_col(the_data, 0) ); 
+	//std::copy( ydata.begin(), ydata.end(), vecut::get_col(the_data, 1) ); 
+
+	//xdata = vecut::get_col(the_data, 0);
+	//ydata = vecut::get_col(the_data, 1);
+
+	scale_fac = 1.0e+6;  f_start = 70.0; f_end = 90.0;
+	for (int i = 0; i < n_rows; i++) {
+		if (the_data[i][0] > f_start && the_data[i][0] < f_end) {
+			xdata.push_back(the_data[i][0]);
+			ydata.push_back(scale_fac * pow(10.0, the_data[i][1] / 10.0)); // convert the spectral data from dBm to mW scale and rescale it
+		}
+	}
+
+	npts = static_cast<int>(xdata.size());
+
+	for (int i = 0; i < npts; i++) {
+		if (ydata[i] > spctr_max) {
+			spctr_max = ydata[i];
+			indx_max = i;
+		}
+
+		if (fabs(ydata[i]) > 0.0) {
+			sigdata.push_back(spread * ydata[i]);
+		}
+		else {
+			sigdata.push_back(spread); // sigdata cannot have zero values
+		}
+	}
+
+	std::cout << "\nMax value in data set: " << spctr_max << "\n";
+	std::cout << "Corresponding Frequency: " << xdata[indx_max] << "\n\n";
+
+	// Perform the best it search for the data set
+	int ITMAX = 50;
+
+	double TOL = 1e-3;
+	double chisq = 0.0;
+
+	// Declare the necessary arrays
+	std::vector<std::vector<double>> covar = vecut::array_2D(npars, npars);
+	std::vector<std::vector<double>> alpha = vecut::array_2D(npars, npars);
+
+	// define the initial guesses to the parameters to be determined
+	std::vector<double> a_guess(npars, 0.0);
+	std::vector<int> ia(npars, 1); // tell the algorithm that you want to locate all parameters 
+
+	ia[1] = 0; ia[3] = 1;
+	a_guess[0] = 10*spctr_max;
+	a_guess[1] = 80;
+	a_guess[2] = 1.5; // initial guesses for the parameters
+	a_guess[3] = 2.0; // initial guesses for the parameters
+
+	// run the fitting algorithm
+	fit::non_lin_fit(xdata, ydata, sigdata, npts, a_guess, ia, npars, covar, alpha, &chisq, Voigt, ITMAX, TOL, true);
+
+	std::cout << "Fitted centre freq: " << a_guess[1] << " MHz\n";
+	std::cout << "Computed peak val: " << a_guess[0] * exp( template_funcs::DSQR(a_guess[2]/ a_guess[3]) ) * probability::erffc(a_guess[2] / a_guess[3]) << " uW\n";
+	std::cout << "Lorentz HWHM: " << a_guess[2] << " MHz\n";
+	std::cout << "Gauss HWHM: " << sqrt( 2.0*log(2.0) ) * a_guess[3] << " MHz\n\n";
+
+	// compute the residuals for the fit
+	std::vector<std::vector<double>> data;
+	fit::residuals(xdata, ydata, sigdata, npts, a_guess, npars, Voigt, data);
+
+	// output the residuals 
+	std::string thefile = "Voigt_non_lin_fit.txt";
+
+	int nrows = 5;
+	vecut::write_into_file(thefile, data, nrows, npts);
+
+	// take a look at the goodness of fit statistics
+	double chisqr = 0.0, rsqr = 0.0, dof = static_cast<int>(npts - npars), gof = 0.0;
+	fit::goodness_of_fit(xdata, ydata, data[4], npts, a_guess, npars, Voigt, &chisqr, &dof, &rsqr, &gof);
+
+	xdata.clear(); ydata.clear(); sigdata.clear();
+	a_guess.clear(); ia.clear(); covar.clear(); alpha.clear();
+	data.clear(); the_data.clear();
 }

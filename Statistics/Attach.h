@@ -37,6 +37,7 @@ static const double PI_5=((4.0/5.0)*p); // pi / 5
 static const double PI_6=((2.0/3.0)*p); // pi / 6 
 static const double EPS = 1.0e-12;
 static const double TINY = 1.0e-20;
+static const double SQRT_PI = sqrt(PI); 
 
 static const int MAX_PATH_LENGTH = 250; // max. length for a directory in Windows OS
 

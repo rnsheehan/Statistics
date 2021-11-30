@@ -87,6 +87,9 @@ if __name__ == '__main__':
     filename = 'Lorentzian_non_lin_fit.txt'    
     non_lin_fit_plot(filename)
     
-    filename = 'Gaussian_non_lin_fit.txt'
+    #filename = 'Gaussian_non_lin_fit.txt'
+    #non_lin_fit_plot(filename)
+
+    filename = 'Voigt_non_lin_fit.txt'
     non_lin_fit_plot(filename)
     
