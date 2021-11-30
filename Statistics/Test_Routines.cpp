@@ -2057,3 +2057,27 @@ void testing::Gaussian_data_fit_test()
 	a_guess.clear(); ia.clear(); covar.clear(); alpha.clear();
 	data.clear(); the_data.clear();
 }
+
+void testing::Voigt(double x, std::vector<double>& a, double* y, std::vector<double>& dyda, int& na)
+{
+	// Definition of the Voigt function to be fitted
+	// a stores Voigt parameters a = { h, x_{centre}, g}
+	// a[0] = h, a[1] = x_{centre}, a[2] = g
+	// g is the Voigt half-width at half-maximum (i.e. linewidth)
+	// Voigt value is given by *y
+	// dyda is array that stores value of derivative of Voigt function wrt each parameter in a
+	// Dimensions of the arrays are a[0..na-1], dyda[0..na-1]
+	// na is no. parameters
+	// R. Sheehan 29 - 11 - 2021
+
+	try {
+		std::complex<double> z = ( (x - a[1] + 0.5 * eye * a[2]) * (2.0 * sqrt(log10(2.0)) / a[2]) );
+		
+		*y = real( a[0] * Faddeeva::w(z) );
+	}
+	catch (std::invalid_argument& e) {
+		std::cerr << e.what();
+	}
+
+	
+}

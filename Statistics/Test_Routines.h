@@ -76,6 +76,8 @@ namespace testing{
 	void Gaussian_data_fit();
 
 	void Gaussian_data_fit_test();
+
+	void Voigt(double x, std::vector<double>& a, double* y, std::vector<double>& dyda, int& na); 
 }
 
 #endif

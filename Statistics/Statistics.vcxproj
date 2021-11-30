@@ -77,6 +77,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Attach.h" />
+    <ClInclude Include="Faddeeva.hh" />
     <ClInclude Include="Fitting_Functions.h" />
     <ClInclude Include="Linear_Algebra.h" />
     <ClInclude Include="Mathematical_Methods.h" />
@@ -89,6 +90,7 @@
     <ClInclude Include="Vector_Utils.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Faddeeva.cc" />
     <ClCompile Include="FittingFunctions.cpp" />
     <ClCompile Include="Linear_Algebra.cpp" />
     <ClCompile Include="Main.cpp" />

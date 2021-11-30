@@ -52,6 +52,7 @@ static const std::complex<double> one(1.0, 0.0);
 #include "Mathematical_Methods.h"
 #include "Vector_Utils.h"
 #include "Linear_Algebra.h"
+#include "Faddeeva.hh"
 #include "Random_Number_Generators.h"
 #include "Probability_Functions.h"
 #include "Statistical_Functions.h"
