@@ -2086,8 +2086,6 @@ void testing::Voigt(double x, std::vector<double>& a, double* y, std::vector<dou
 	catch (std::invalid_argument& e) {
 		std::cerr << e.what();
 	}
-
-	
 }
 
 void testing::Voigt_data_fit()
@@ -2193,8 +2191,8 @@ void testing::Voigt_data_fit_test()
 	// R. Sheehan 27 - 10 - 2021
 
 	// Read in the measured spectral data
-	//std::string filename = "Smpl_LLM_7.txt";
-	std::string filename = "LLM_Spctrm_I_65.txt";
+	std::string filename = "Smpl_LLM_11.txt";
+	//std::string filename = "LLM_Spctrm_I_65.txt";
 	
 	int npts, n_rows, npars = 4, n_cols, indx_max = 0;
 	long idum = (-1011);
@@ -2266,10 +2264,16 @@ void testing::Voigt_data_fit_test()
 	// run the fitting algorithm
 	fit::non_lin_fit(xdata, ydata, sigdata, npts, a_guess, ia, npars, covar, alpha, &chisq, Voigt, ITMAX, TOL, true);
 
+	// compute the HWhm using bisection
+	double xlow = a_guess[1], xhigh = f_end, HWHM = 0.0;
+	
+	Voigt_HWHM(xlow, xhigh, a_guess, npars, &HWHM);
+
 	std::cout << "Fitted centre freq: " << a_guess[1] << " MHz\n";
 	std::cout << "Computed peak val: " << a_guess[0] * exp( template_funcs::DSQR(a_guess[2]/ a_guess[3]) ) * probability::erffc(a_guess[2] / a_guess[3]) << " uW\n";
 	std::cout << "Lorentz HWHM: " << a_guess[2] << " MHz\n";
-	std::cout << "Gauss HWHM: " << sqrt( 2.0*log(2.0) ) * a_guess[3] << " MHz\n\n";
+	std::cout << "Gauss HWHM: " << sqrt( 2.0*log(2.0) ) * a_guess[3] << " MHz\n";
+	std::cout << "Voigt HWHM: " << HWHM << " MHz\n\n";	
 
 	// compute the residuals for the fit
 	std::vector<std::vector<double>> data;
@@ -2288,4 +2292,115 @@ void testing::Voigt_data_fit_test()
 	xdata.clear(); ydata.clear(); sigdata.clear();
 	a_guess.clear(); ia.clear(); covar.clear(); alpha.clear();
 	data.clear(); the_data.clear();
+}
+
+void testing::Voigt_HWHM(double xlow, double xhigh, std::vector<double>& a, int& na, double* HWHM, bool loud)
+{
+	// determine the HWHM of a Voigt function with the parameter set defined in a
+	// use bisection method algorithm to look for the HWHM on the interval [xlow, xhigh]
+	// a stores Voigt parameters a = { h, x_{centre}, g, sigma}
+	// a[0] = h, a[1] = x_{centre}, a[2] = g, a[3] = sigma
+	// h is an amplitude fitting factor
+	// x_centre is the centre of the Voigt frunction
+	// g is the half-width at half-maximum of the Lorentzian portion of Voigt
+	// sigma is the std. dev. of the Gaussian portion of Voigt HWHM_{Gauss} = sqrt( 2 log(2) ) c
+	// parameters in a will have been determined by Levenberg-Marquardt non-linear fit procedure
+	// result will be stored in HWHM
+	// R. Sheehan 1 - 12 - 2021
+
+	try {
+	
+		bool c1 = xhigh > xlow ? true : false; 
+		bool c2 = xlow > 0 ? true : false; 
+		bool c3 = a[3] > 0 ? true : false; 
+		bool c10 = c1 && c2;
+
+		if (c10) {
+			int count = 0, MAXIT = 50; // max. no iterations of bisection method
+			bool converged = false; 
+			double TOL = 1.0e-3; // desired accuracy of root computation
+			double root = xlow, left = xlow, right = xhigh, dx = 0.0, fll = 0.0,  fl = 0.0, frr = 0.0,  fr = 0.0, ivttest = 0.0; 
+			double lor_gau = a[2] / a[3]; // g_{lor} / sigma_{gau}
+			double Vmax_half = 0.5*( a[0] * exp(template_funcs::DSQR(lor_gau)) * probability::erffc(lor_gau) ); // half the peak value of the Voigt function
+
+			if (loud)std::cout << "Peak value: " << 2.0 * Vmax_half << "\n"; 
+
+			std::vector<double> dyda(na, 0.0); 
+			
+			// subtract the peak value since you're looking for point where Voigt = 0.5*Vmax
+
+			Voigt(left, a, &fll, dyda, na); fll -= Vmax_half; // compute the value of the function at the interval endpoints
+			Voigt(right, a, &frr, dyda, na); frr -= Vmax_half; // compute the value of the function at the interval endpoints 
+			fl = template_funcs::Signum(fll); fr = template_funcs::Signum(frr);
+
+			// test the interval to ensure it contains a root ivttest == -1 => interval has root
+			ivttest = fl * fr;
+
+			if (ivttest < 0.0) {
+
+				// the interval contains a root, search can proceed
+				if (loud)std::cout << "Initial approximation to the root is " << root << ", fl = "<<fll<<" , fr = "<<frr<<"\n";
+
+				// Compute MAXIT iterations of BisectRoot, stop if the desired tolerance is reached
+				count = 0; 
+				while (count < MAXIT) {
+
+					// Compute the amount by which the root position must be updated
+					dx = 0.5 * (right - left); 
+
+					// Update the position of the root
+					root = left + dx; 
+
+					if (loud)std::cout << "Iteration: " << count << ", root = " << root << ", fl = " << fll << " , fr = " << frr << "\n";
+
+					// Test for convergence
+					if (fabs(dx) < TOL) {
+						if (loud)std::cout << "Bisection has converged to a root within tolerance " << TOL << " after " << count << " iterations\n"; 
+						converged = true; 
+						break; 
+					}
+					else {
+						// Update the endpoints of the interval containing the root
+						Voigt(root, a, &frr, dyda, na); frr -= Vmax_half; fr = template_funcs::Signum(frr); 
+						ivttest = fl * fr;
+						if (ivttest > 0.0) {
+							left = root; 
+							fl = fr; 
+						}
+						else {
+							right = root; 
+						}
+					}
+
+					count++;
+				}
+
+				if (converged) {
+					if (loud)std::cout << "Root is located at " << root << "\n";
+					*HWHM = fabs(root - a[1]);
+				}
+				else {
+					if (loud)std::cout << "Bisection has not converged to a root within tolerance " << TOL << " after " << count << " iterations\n";
+					*HWHM = fabs(root - a[1]);
+				}
+			}
+			else {
+				// the interval contains no root, search cannot proceed
+				std::string reason;
+				reason = "Error: testing::Voigt_FWHM()\n";
+				reason += "Search interval improperly defined\n";
+				throw std::invalid_argument(reason);
+			}			
+		}
+		else {
+			std::string reason;
+			reason = "Error: testing::Voigt_FWHM()\n";
+			if(!c1 || !c2) reason += "Search interval improperly defined\n";
+			if (!c3) reason += "Voigt parameters improperly defined\n"; 
+			throw std::invalid_argument(reason);
+		}
+	}
+	catch (std::invalid_argument& e) {
+		std::cerr << e.what();
+	}
 }
