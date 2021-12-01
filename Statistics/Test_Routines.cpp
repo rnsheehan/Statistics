@@ -2191,8 +2191,8 @@ void testing::Voigt_data_fit_test()
 	// R. Sheehan 27 - 10 - 2021
 
 	// Read in the measured spectral data
-	std::string filename = "Smpl_LLM_11.txt";
-	//std::string filename = "LLM_Spctrm_I_65.txt";
+	//std::string filename = "Smpl_LLM_11.txt";
+	std::string filename = "LLM_Spctrm_I_60.txt";
 	
 	int npts, n_rows, npars = 4, n_cols, indx_max = 0;
 	long idum = (-1011);
@@ -2319,7 +2319,7 @@ void testing::Voigt_HWHM(double xlow, double xhigh, std::vector<double>& a, int&
 			int count = 0, MAXIT = 50; // max. no iterations of bisection method
 			bool converged = false; 
 			double TOL = 1.0e-3; // desired accuracy of root computation
-			double root = xlow, left = xlow, right = xhigh, dx = 0.0, fll = 0.0,  fl = 0.0, frr = 0.0,  fr = 0.0, ivttest = 0.0; 
+			double root = xlow, left = xlow, right = xhigh, dx = 0.0, fll = 0.0,  fl = 0.0, frr = 0.0,  fr = 0.0; 
 			double lor_gau = a[2] / a[3]; // g_{lor} / sigma_{gau}
 			double Vmax_half = 0.5*( a[0] * exp(template_funcs::DSQR(lor_gau)) * probability::erffc(lor_gau) ); // half the peak value of the Voigt function
 
@@ -2334,9 +2334,7 @@ void testing::Voigt_HWHM(double xlow, double xhigh, std::vector<double>& a, int&
 			fl = template_funcs::Signum(fll); fr = template_funcs::Signum(frr);
 
 			// test the interval to ensure it contains a root ivttest == -1 => interval has root
-			ivttest = fl * fr;
-
-			if (ivttest < 0.0) {
+			if ( (fl * fr) < 0.0) {
 
 				// the interval contains a root, search can proceed
 				if (loud)std::cout << "Initial approximation to the root is " << root << ", fl = "<<fll<<" , fr = "<<frr<<"\n";
@@ -2362,8 +2360,7 @@ void testing::Voigt_HWHM(double xlow, double xhigh, std::vector<double>& a, int&
 					else {
 						// Update the endpoints of the interval containing the root
 						Voigt(root, a, &frr, dyda, na); frr -= Vmax_half; fr = template_funcs::Signum(frr); 
-						ivttest = fl * fr;
-						if (ivttest > 0.0) {
+						if ( (fl * fr) > 0.0) {
 							left = root; 
 							fl = fr; 
 						}
