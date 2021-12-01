@@ -2319,7 +2319,7 @@ void testing::Voigt_HWHM(double xlow, double xhigh, std::vector<double>& a, int&
 			int count = 0, MAXIT = 50; // max. no iterations of bisection method
 			bool converged = false; 
 			double TOL = 1.0e-3; // desired accuracy of root computation
-			double root = xlow, left = xlow, right = xhigh, dx = 0.0, fll = 0.0,  fl = 0.0, frr = 0.0,  fr = 0.0; 
+			double root = xlow, left = xlow, right = xhigh, dx = 0.0, fl = 0.0, fr = 0.0; 
 			double lor_gau = a[2] / a[3]; // g_{lor} / sigma_{gau}
 			double Vmax_half = 0.5*( a[0] * exp(template_funcs::DSQR(lor_gau)) * probability::erffc(lor_gau) ); // half the peak value of the Voigt function
 
@@ -2329,15 +2329,15 @@ void testing::Voigt_HWHM(double xlow, double xhigh, std::vector<double>& a, int&
 			
 			// subtract the peak value since you're looking for point where Voigt = 0.5*Vmax
 
-			Voigt(left, a, &fll, dyda, na); fll -= Vmax_half; // compute the value of the function at the interval endpoints
-			Voigt(right, a, &frr, dyda, na); frr -= Vmax_half; // compute the value of the function at the interval endpoints 
-			fl = template_funcs::Signum(fll); fr = template_funcs::Signum(frr);
+			Voigt(left, a, &fl, dyda, na); fl -= Vmax_half; // compute the value of the function at the interval endpoints
+			Voigt(right, a, &fr, dyda, na); fr -= Vmax_half; // compute the value of the function at the interval endpoints 
+			fl = template_funcs::Signum(fl); fr = template_funcs::Signum(fr);
 
 			// test the interval to ensure it contains a root ivttest == -1 => interval has root
 			if ( (fl * fr) < 0.0) {
 
 				// the interval contains a root, search can proceed
-				if (loud)std::cout << "Initial approximation to the root is " << root << ", fl = "<<fll<<" , fr = "<<frr<<"\n";
+				if (loud)std::cout << "Initial approximation to the root is " << root << ", fl = "<<fl<<" , fr = "<<fr<<"\n";
 
 				// Compute MAXIT iterations of BisectRoot, stop if the desired tolerance is reached
 				count = 0; 
@@ -2349,7 +2349,7 @@ void testing::Voigt_HWHM(double xlow, double xhigh, std::vector<double>& a, int&
 					// Update the position of the root
 					root = left + dx; 
 
-					if (loud)std::cout << "Iteration: " << count << ", root = " << root << ", fl = " << fll << " , fr = " << frr << "\n";
+					if (loud)std::cout << "Iteration: " << count << ", root = " << root << ", fl = " << fl << " , fr = " << fr << "\n";
 
 					// Test for convergence
 					if (fabs(dx) < TOL) {
@@ -2359,7 +2359,8 @@ void testing::Voigt_HWHM(double xlow, double xhigh, std::vector<double>& a, int&
 					}
 					else {
 						// Update the endpoints of the interval containing the root
-						Voigt(root, a, &frr, dyda, na); frr -= Vmax_half; fr = template_funcs::Signum(frr); 
+						Voigt(root, a, &fr, dyda, na); fr -= Vmax_half; fr = template_funcs::Signum(fr); 
+
 						if ( (fl * fr) > 0.0) {
 							left = root; 
 							fl = fr; 
