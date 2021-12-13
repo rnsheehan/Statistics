@@ -84,6 +84,8 @@ namespace testing{
 	void Voigt_data_fit_test(); 
 
 	void Voigt_HWHM(double xlow, double xhigh, std::vector<double>& a, int& na, double* HWHM, bool loud = false);
+
+	void Lorentz_Voigt_Fit_Analysis();
 }
 
 #endif

@@ -102,7 +102,9 @@ int main()
 
 	//testing::Voigt_data_fit();
 	
-	testing::Voigt_data_fit_test();
+	//testing::Voigt_data_fit_test();
+
+	testing::Lorentz_Voigt_Fit_Analysis(); 
 	
 	std::cout<<"Press enter to close console\n";
 	std::cin.get(); 

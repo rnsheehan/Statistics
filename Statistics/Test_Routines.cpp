@@ -1623,8 +1623,11 @@ void testing::Lorentzian_data_fit()
 
 	// Generate data to use in the fit process
 	int npts;
-	long idum = (-1011);
 	double spread, xlow, xhigh, deltax, xpos, yval;
+
+	time_t rawtime;
+	time(&rawtime);
+	long idum = (-static_cast<long>(rawtime)); // randomised seed for rng
 
 	xlow = 70.0; xhigh = 90.0; deltax = 0.1;
 	npts = (int)(1.0 + ((xhigh - xlow) / deltax));
@@ -1892,8 +1895,11 @@ void testing::Gaussian_data_fit()
 
 	// Generate data to use in the fit process
 	int npts;
-	long idum = (-1011);
 	double spread, xlow, xhigh, deltax, xpos, yval;
+
+	time_t rawtime;
+	time(&rawtime);
+	long idum = (-static_cast<long>(rawtime)); // randomised seed for rng
 
 	xlow = 75.0; xhigh = 85.0; deltax = 0.1;
 	npts = (int)(1.0 + ((xhigh - xlow) / deltax));
@@ -2120,8 +2126,11 @@ void testing::Voigt_data_fit()
 
 	// Generate data to use in the fit process
 	int npts;
-	long idum = (-1011);
 	double spread, xlow, xhigh, deltax, xpos, yval;
+
+	time_t rawtime;
+	time(&rawtime);
+	long idum = (-static_cast<long>(rawtime)); // randomised seed for rng
 
 	xlow = 70.0; xhigh = 90.0; deltax = 0.01;
 	npts = (int)(1.0 + ((xhigh - xlow) / deltax));
@@ -2195,8 +2204,11 @@ void testing::Voigt_data_fit_test()
 	std::string filename = "LLM_Spctrm_I_60.txt";
 	
 	int npts, n_rows, npars = 4, n_cols, indx_max = 0;
-	long idum = (-1011);
 	double spread = 0.15, spctr_max = -500.0, f_max = 0, f_start, f_end, scale_fac;
+
+	time_t rawtime;
+	time(&rawtime);
+	long idum = (-static_cast<long>(rawtime)); // randomised seed for rng
 
 	std::vector<std::vector<double>> the_data;
 
@@ -2264,7 +2276,7 @@ void testing::Voigt_data_fit_test()
 	// run the fitting algorithm
 	fit::non_lin_fit(xdata, ydata, sigdata, npts, a_guess, ia, npars, covar, alpha, &chisq, Voigt, ITMAX, TOL, true);
 
-	// compute the HWhm using bisection
+	// compute the HWHM using bisection
 	double xlow = a_guess[1], xhigh = f_end, HWHM = 0.0;
 	
 	Voigt_HWHM(xlow, xhigh, a_guess, npars, &HWHM);
@@ -2401,4 +2413,200 @@ void testing::Voigt_HWHM(double xlow, double xhigh, std::vector<double>& a, int&
 	catch (std::invalid_argument& e) {
 		std::cerr << e.what();
 	}
+}
+
+void testing::Lorentz_Voigt_Fit_Analysis()
+{
+	// Run the Lorentz and Voigt fitting algorithms for the sample data sets
+	// Save the fitting parameters, see if you can fit a model to the Voigt HWHM data
+	// R. Sheehan 13 - 12 - 2021
+
+	std::string data_home = "c:\\users\\robertsheehan\\Research\\Laser_Physics\\Linewidth\\Data\\Sample_Data"; 
+
+	useful_funcs::set_directory(data_home); 
+
+	useful_funcs::get_directory(); 
+
+	int n_files = 6, npts, n_rows, npars, n_cols, indx_max = 0, ITMAX = 50;
+	double spread = 0.15, spctr_max = -500.0, f_max = 0, scale_fac = 1.0e+6, f_start = 70.0, f_end = 90.0, TOL = 1e-3, chisq = 0.0;
+	
+	std::string file_tmplt; 
+	std::string file_out; 
+	std::string file_results; 
+	
+	// Declare the necessary arrays
+	std::vector<double> xdata;
+	std::vector<double> ydata;
+	std::vector<double> sigdata;
+	std::vector<std::vector<double>> the_data;
+
+	file_out = "Fitted_Parameter_Values.txt"; 
+	std::fstream write(file_out, std::ios_base::out|std::ios_base::app);
+	/*if (write.is_open()) {
+		write << "Filename , Actual Peak / uW , Voigt h / uW , Voigt f_{0} / MHz , Voigt gamma / MHz , Voigt sigma / MHz , Voigt delta / MHz , Voigt peak / uW , Lorentz h / uW , Lorentz f_{0} / MHz , Lorentz gamma / MHz , Lorentz peak / uW\n"; 
+	}*/
+
+	for (int i = 40; i < 66; i+=5) {
+		//file_tmplt = "Smpl_LLM_" + template_funcs::toString(i) + dottxt; // name of the file with data to be fitted
+		file_tmplt = "LLM_Spctrm_I_" + template_funcs::toString(i) + dottxt; // name of the file with data to be fitted
+
+		vecut::read_into_matrix(file_tmplt, the_data, n_rows, n_cols, true); // read the data from the file into memory
+
+		// format the data from dBm scale to linear scale prior to fitting
+		for (int i = 0; i < n_rows; i++) {
+			if (the_data[i][0] > f_start && the_data[i][0] < f_end) {
+				xdata.push_back(the_data[i][0]);
+				ydata.push_back(scale_fac * pow(10.0, the_data[i][1] / 10.0)); // convert the spectral data from dBm to mW scale and rescale it
+			}
+		}
+
+		npts = static_cast<int>(xdata.size()); // number of data points in the fit
+
+		// locate the location of the maximum of the data set
+		indx_max = 0; spctr_max = -500.0, f_max = 0;
+		for (int i = 0; i < npts; i++) {
+			if (ydata[i] > spctr_max) {
+				spctr_max = ydata[i];
+				indx_max = i;
+			}
+
+			if (fabs(ydata[i]) > 0.0) {
+				sigdata.push_back(spread * ydata[i]);
+			}
+			else {
+				sigdata.push_back(spread); // sigdata cannot have zero values
+			}
+		}
+
+		std::cout << "\nMax value in data set: " << spctr_max << "\n";
+		std::cout << "Corresponding Frequency: " << xdata[indx_max] << "\n\n";
+
+		// Voigt Fit
+		// Declare the necessary arrays
+		npars = 4; // For Voigt fit 4 parameters are required
+		std::vector<std::vector<double>> covar = vecut::array_2D(npars, npars);
+		std::vector<std::vector<double>> alpha = vecut::array_2D(npars, npars);
+
+		// define the initial guesses to the parameters to be determined
+		std::vector<double> a_voigt(npars, 0.0);
+		std::vector<int> ia(npars, 1); // tell the algorithm that you want to locate all parameters 
+
+		ia[1] = 0;
+		a_voigt[0] = 10 * spctr_max; // must start looking for amplitude parameter 
+		a_voigt[1] = 80; // this is fixed
+		a_voigt[2] = 1.5; // initial guesses for the parameters
+		a_voigt[3] = 2.0; // initial guesses for the parameters
+
+		// run the fitting algorithm
+		chisq = 0.0; // reset value to 0.0 between calls
+		fit::non_lin_fit(xdata, ydata, sigdata, npts, a_voigt, ia, npars, covar, alpha, &chisq, Voigt, ITMAX, TOL, true);
+
+		// compute the HWHM using bisection
+		double xlow = a_voigt[1], xhigh = f_end, HWHM = 0.0, voigt_peak;
+
+		voigt_peak = a_voigt[0] * exp(template_funcs::DSQR(a_voigt[2] / a_voigt[3])) * probability::erffc(a_voigt[2] / a_voigt[3]); 
+
+		Voigt_HWHM(xlow, xhigh, a_voigt, npars, &HWHM);
+
+		std::cout << "Voigt Fit\nFitted centre freq: " << a_voigt[1] << " MHz\n";
+		std::cout << "Computed peak val: " << voigt_peak << " uW\n";
+		std::cout << "Lorentz HWHM: " << a_voigt[2] << " MHz\n";
+		std::cout << "Gauss HWHM: " << sqrt(2.0 * log(2.0)) * a_voigt[3] << " MHz\n";
+		std::cout << "Voigt HWHM: " << HWHM << " MHz\n\n";
+
+		// compute the residuals for the fit 
+		// Voigt values stored in voigt_data[3], residuals stored in voigt_data[4]
+		std::vector<std::vector<double>> voigt_data;
+		fit::residuals(xdata, ydata, sigdata, npts, a_voigt, npars, Voigt, voigt_data);
+
+		// clear those vectors between calls to the fit functions
+		covar.clear(); alpha.clear(); ia.clear();
+
+		// Lorentz Fit
+		// Declare the necessary arrays
+		npars = 3; // For Voigt fit 3 parameters are required
+		covar = vecut::array_2D(npars, npars);
+		alpha = vecut::array_2D(npars, npars);
+
+		// define the initial guesses to the parameters to be determined
+		std::vector<double> a_lorentz(npars, 0.0);
+		ia.resize(npars, 1); // tell the algorithm that you want to locate all parameters 
+
+		ia[1] = 0;
+		a_lorentz[0] = 10 * spctr_max; // must start looking for amplitude parameter 
+		a_lorentz[1] = 80; // this is fixed
+		a_lorentz[2] = 1.5; // initial guesses for the parameters
+
+		// run the fitting algorithm
+		chisq = 0.0; // reset value to 0.0 between calls
+		fit::non_lin_fit(xdata, ydata, sigdata, npts, a_lorentz, ia, npars, covar, alpha, &chisq, Lorentzian, ITMAX, TOL, true);
+
+		double lorentz_peak = a_lorentz[0] / a_lorentz[2]; 
+
+		std::cout << "Lorentz Fit\nFitted centre freq: " << a_lorentz[1] << " MHz\n";
+		std::cout << "Computed peak val: " << lorentz_peak << "uW\n";
+		std::cout << "Computed HWHM: " << a_lorentz[2] << " MHz\n\n";
+
+		// compute the residuals for the fit 
+		// Voigt values stored in data[3], residuals stored in data[4]
+		std::vector<std::vector<double>> lor_data;
+		fit::residuals(xdata, ydata, sigdata, npts, a_lorentz, npars, Lorentzian, lor_data);
+
+		// clear those vectors between calls to the fit functions
+		covar.clear(); alpha.clear(); ia.clear();
+
+		// Output fit Parameter Results
+		// Output data in the form Filename , Actual Peak / uW , Voigt h / uW , Voigt f_{0} / MHz , Voigt gamma / MHz , Voigt sigma / MHz , Voigt delta / MHz , Voigt peak / uW , Lorentz h / uW , Lorentz f_{0} / MHz , Lorentz gamma / MHz , Lorentz peak / uW
+		if (write.is_open()) {
+			write << file_tmplt << " , " << std::setprecision(10) << spctr_max << " , "; 
+			for (int i = 0; i < 4; i++) {
+				write << std::setprecision(10) << a_voigt[i] << " , ";
+			}
+			write << std::setprecision(10)<< HWHM <<" , " << voigt_peak << " , ";
+			for (int i = 0; i < 3; i++) {
+				write << std::setprecision(10) << a_lorentz[i] << " , ";
+			}
+			write << std::setprecision(10) << lorentz_peak << "\n";
+		}
+
+		// Output fit function results
+		// Data will be output in the form
+		// row 1: freq fit data, row 2: LLM spctrl data, row 3: Voigt f vals, row 4: Voigt resids, row 5: Lorentz f vals, row 6: Lorentz f resids
+		useful_funcs::remove_substring(file_tmplt, dottxt); 
+		file_results = file_tmplt + "_fit_results.txt";
+		std::ofstream write_res(file_results, std::ios_base::out, std::ios_base::trunc);
+		if (write_res.is_open()) {
+			for (int i = 0; i < npts; i++) {
+				write_res << std::setprecision(10) << voigt_data[0][i] << " , "; 
+			}
+			write_res << "\n";
+			for (int i = 0; i < npts; i++) {
+				write_res << std::setprecision(10) << voigt_data[1][i] << " , ";
+			}
+			write_res << "\n";
+			for (int i = 0; i < npts; i++) {
+				write_res << std::setprecision(10) << voigt_data[3][i] << " , ";
+			}
+			write_res << "\n";
+			for (int i = 0; i < npts; i++) {
+				write_res << std::setprecision(10) << voigt_data[4][i] << " , ";
+			}
+			write_res << "\n";
+			for (int i = 0; i < npts; i++) {
+				write_res << std::setprecision(10) << lor_data[3][i] << " , ";
+			}
+			write_res << "\n";
+			for (int i = 0; i < npts; i++) {
+				write_res << std::setprecision(10) << lor_data[4][i] << " , ";
+			}
+			write_res << "\n";
+		}
+
+		write_res.close(); 
+
+		// clear those vectors between file IO
+		the_data.clear(); xdata.clear(); ydata.clear(); sigdata.clear(); voigt_data.clear(); lor_data.clear(); 
+	}
+
+	write.close(); 
 }
