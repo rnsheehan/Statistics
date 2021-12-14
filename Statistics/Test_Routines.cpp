@@ -2427,7 +2427,7 @@ void testing::Lorentz_Voigt_Fit_Analysis()
 
 	useful_funcs::get_directory(); 
 
-	int n_files = 6, npts, n_rows, npars, n_cols, indx_max = 0, ITMAX = 50;
+	int n_files = 11, npts, n_rows, npars, n_cols, indx_max = 0, ITMAX = 50;
 	double spread = 0.15, spctr_max = -500.0, f_max = 0, scale_fac = 1.0e+6, f_start = 70.0, f_end = 90.0, TOL = 1e-3, chisq = 0.0;
 	
 	std::string file_tmplt; 
@@ -2441,14 +2441,15 @@ void testing::Lorentz_Voigt_Fit_Analysis()
 	std::vector<std::vector<double>> the_data;
 
 	file_out = "Fitted_Parameter_Values.txt"; 
+	//std::ofstream write(file_out, std::ios_base::out , std::ios_base::app);
 	std::fstream write(file_out, std::ios_base::out|std::ios_base::app);
 	/*if (write.is_open()) {
 		write << "Filename , Actual Peak / uW , Voigt h / uW , Voigt f_{0} / MHz , Voigt gamma / MHz , Voigt sigma / MHz , Voigt delta / MHz , Voigt peak / uW , Lorentz h / uW , Lorentz f_{0} / MHz , Lorentz gamma / MHz , Lorentz peak / uW\n"; 
 	}*/
 
-	for (int i = 40; i < 66; i+=5) {
-		//file_tmplt = "Smpl_LLM_" + template_funcs::toString(i) + dottxt; // name of the file with data to be fitted
-		file_tmplt = "LLM_Spctrm_I_" + template_funcs::toString(i) + dottxt; // name of the file with data to be fitted
+	for (int i = 1; i <=11; i++) {
+		file_tmplt = "Smpl_LLM_" + template_funcs::toString(i) + dottxt; // name of the file with data to be fitted
+		//file_tmplt = "LLM_Spctrm_I_" + template_funcs::toString(i) + dottxt; // name of the file with data to be fitted
 
 		vecut::read_into_matrix(file_tmplt, the_data, n_rows, n_cols, true); // read the data from the file into memory
 
@@ -2577,29 +2578,59 @@ void testing::Lorentz_Voigt_Fit_Analysis()
 		std::ofstream write_res(file_results, std::ios_base::out, std::ios_base::trunc);
 		if (write_res.is_open()) {
 			for (int i = 0; i < npts; i++) {
-				write_res << std::setprecision(10) << voigt_data[0][i] << " , "; 
+				if (i == npts - 1) {
+					write_res << std::setprecision(10) << voigt_data[0][i] << "\n";
+				}
+				else {
+					write_res << std::setprecision(10) << voigt_data[0][i] << " , ";
+				}
 			}
-			write_res << "\n";
+			
 			for (int i = 0; i < npts; i++) {
-				write_res << std::setprecision(10) << voigt_data[1][i] << " , ";
+				if (i == npts - 1) {
+					write_res << std::setprecision(10) << voigt_data[1][i] << "\n";
+				}
+				else {
+					write_res << std::setprecision(10) << voigt_data[1][i] << " , ";
+				}
 			}
-			write_res << "\n";
+			
 			for (int i = 0; i < npts; i++) {
-				write_res << std::setprecision(10) << voigt_data[3][i] << " , ";
+				if (i == npts - 1) {
+					write_res << std::setprecision(10) << voigt_data[3][i] << "\n";
+				}
+				else {
+					write_res << std::setprecision(10) << voigt_data[3][i] << " , ";
+				}
 			}
-			write_res << "\n";
+			
 			for (int i = 0; i < npts; i++) {
-				write_res << std::setprecision(10) << voigt_data[4][i] << " , ";
+				if (i == npts - 1) {
+					write_res << std::setprecision(10) << voigt_data[4][i] << "\n";
+				}
+				else {
+					write_res << std::setprecision(10) << voigt_data[4][i] << " , ";
+				}
 			}
-			write_res << "\n";
+			
 			for (int i = 0; i < npts; i++) {
-				write_res << std::setprecision(10) << lor_data[3][i] << " , ";
+				if (i == npts - 1) {
+					write_res << std::setprecision(10) << lor_data[3][i] << "\n";
+				}
+				else {
+					write_res << std::setprecision(10) << lor_data[3][i] << " , ";
+				}
 			}
-			write_res << "\n";
+			
 			for (int i = 0; i < npts; i++) {
-				write_res << std::setprecision(10) << lor_data[4][i] << " , ";
+				if (i == npts - 1) {
+					write_res << std::setprecision(10) << lor_data[4][i] << "\n";
+				}
+				else {
+					write_res << std::setprecision(10) << lor_data[4][i] << " , ";
+				}
 			}
-			write_res << "\n";
+			
 		}
 
 		write_res.close(); 
