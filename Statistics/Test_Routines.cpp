@@ -1458,9 +1458,9 @@ void testing::diode_voltage(double x, std::vector<double>& a, double* y, std::ve
 
 	try {
 		double Tkelvin = 273.15 + a[1]; // convert temperature to Kelvin and multiply by ( k_{B} / q )
-		double Tterm = 8.61733e-5 * Tkelvin; 
-		double Iratio = (x / a[2]); 
-		double arg = 1.0 + Iratio; // compute term I_{d} / I_{s}
+		double Tterm = 8.61733e-5 * Tkelvin; // convert temperature to Kelvin and multiply by ( k_{B} / q )
+		double Iratio = (x / a[2]); // I_{d} / I_{s}
+		double arg = 1.0 + Iratio; // compute term 1 + (I_{d} / I_{s})
 		*y = a[0] * Tterm * log(arg); // eta * Tterm * log ( 1 + I_{d} / I_{s} )
 		dyda[0] = *y / a[0]; // \partial V_{d} / \partial \eta
 		dyda[1] = *y / Tkelvin; // \partial V_{d} / \partial T
@@ -1514,7 +1514,7 @@ void testing::diode_voltage_data_fit()
 	std::vector<double> ydata(npts, 0.0);
 	std::vector<double> sigdata(npts, 0.0);
 
-	spread = 0.2; // variance of the noise being added to the signal
+	spread = 0.01; // variance of the noise being added to the signal
 	xpos = xlow;
 	for (int i = 0; i < npts; i++) {
 
@@ -1546,7 +1546,7 @@ void testing::diode_voltage_data_fit()
 	std::vector<int> ia(npars, 1); // tell the algorithm that you want to locate all parameters 
 
 	ia[1] = 0; // search for params 0 and 2, fix param 1 value
-	a_guess[0] = 1.4; a_guess[1] = 22.0; a_guess[2] = 4e-10; // initial guesses for the parameters
+	a_guess[0] = 10; a_guess[1] = 22.0; a_guess[2] = 4e-10; // initial guesses for the parameters
 
 	// run the fitting algorithm
 	fit::non_lin_fit(xdata, ydata, sigdata, npts, a_guess, ia, npars, covar, alpha, &chisq, diode_voltage, ITMAX, TOL, true);
@@ -1564,6 +1564,92 @@ void testing::diode_voltage_data_fit()
 	xdata.clear(); ydata.clear(); sigdata.clear();
 	a_guess.clear(); ia.clear(); covar.clear(); alpha.clear();
 	a.clear();
+}
+
+void testing::diode_voltage_data_fit_test()
+{
+	// Apply the LM method to measured diode voltage data
+	// R. Sheehan 15 - 12 - 2021
+
+	// Read in the measured diode voltage data
+	//std::string filename = "AM_FR101_Swp_3_Rd_10.txt";
+	std::string filename = "AM_IN4001_Swp_3_Rd_10.txt";
+
+	int npts, n_rows, npars = 3, n_cols, indx_max = 0;
+	double spread = 0.05, I_start = 0.5;
+
+	time_t rawtime;
+	time(&rawtime);
+	long idum = (-static_cast<long>(rawtime)); // randomised seed for rng
+
+	std::vector<std::vector<double>> the_data;
+
+	vecut::read_into_matrix(filename, the_data, n_rows, n_cols, true);
+
+	// Estimate sigdata
+	std::vector<double> xdata;
+	std::vector<double> ydata;
+	std::vector<double> sigdata;
+
+	// for some reason the copy was throwing an exception
+	//std::copy( xdata.begin(), xdata.end(), vecut::get_col(the_data, 0) ); 
+	//std::copy( ydata.begin(), ydata.end(), vecut::get_col(the_data, 1) ); 
+
+	//xdata = vecut::get_col(the_data, 0);
+	//ydata = vecut::get_col(the_data, 1);
+
+	for (int i = 0; i < n_rows; i++) {
+		if (the_data[i][0] > I_start) {
+			xdata.push_back(the_data[i][0]); // read in current data for I > 0 mA
+			ydata.push_back(the_data[i][1]); // store voltage data
+			if (fabs(the_data[i][1]) > 0.0) {
+				sigdata.push_back(spread * the_data[i][1]); // estimate error in voltage reading
+			}
+			else {
+				sigdata.push_back(spread); // sigdata cannot have zero values
+			}
+		}
+	}
+
+	npts = static_cast<int>(xdata.size());
+
+	// Perform the best it search for the data set
+	int ITMAX = 50;
+
+	double TOL = 1e-3;
+	double chisq = 0.0;
+
+	// Declare the necessary arrays
+	std::vector<std::vector<double>> covar = vecut::array_2D(npars, npars);
+	std::vector<std::vector<double>> alpha = vecut::array_2D(npars, npars);
+
+	// define the initial guesses to the parameters to be determined
+	std::vector<double> a_guess(npars, 0.0);
+	std::vector<int> ia(npars, 1); // tell the algorithm that you want to locate all parameters 
+
+	ia[1] = 0; 
+	a_guess[0] = 10.0; a_guess[1] = 20.0; a_guess[2] = 1e-5; // initial guesses for the parameters
+
+	// run the fitting algorithm
+	fit::non_lin_fit(xdata, ydata, sigdata, npts, a_guess, ia, npars, covar, alpha, &chisq, diode_voltage, ITMAX, TOL, true);
+
+	// compute the residuals for the fit
+	std::vector<std::vector<double>> data;
+	fit::residuals(xdata, ydata, sigdata, npts, a_guess, npars, diode_voltage, data);
+
+	// output the residuals 
+	std::string thefile = "Diode_non_lin_fit.txt";
+
+	int nrows = 5;
+	vecut::write_into_file(thefile, data, nrows, npts);
+
+	// take a look at the goodness of fit statistics
+	double chisqr = 0.0, rsqr = 0.0, dof = static_cast<int>(npts - npars), gof = 0.0;
+	fit::goodness_of_fit(xdata, ydata, data[4], npts, a_guess, npars, diode_voltage, &chisqr, &dof, &rsqr, &gof);
+
+	xdata.clear(); ydata.clear(); sigdata.clear();
+	a_guess.clear(); ia.clear(); covar.clear(); alpha.clear();
+	data.clear(); the_data.clear();
 }
 
 void testing::Lorentzian(double x, std::vector<double>& a, double* y, std::vector<double>& dyda, int& na)

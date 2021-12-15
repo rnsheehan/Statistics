@@ -81,6 +81,9 @@ if __name__ == '__main__':
     
     print(pwd)
     
+    filename = "Diode_non_lin_fit.txt"
+    non_lin_fit_plot(filename)
+    
     #filename = "Gauss_non_lin_fit.txt"
     #filename = 'Diode_non_lin_fit.txt'
     
@@ -90,6 +93,6 @@ if __name__ == '__main__':
     #filename = 'Gaussian_non_lin_fit.txt'
     #non_lin_fit_plot(filename)
 
-    filename = 'Voigt_non_lin_fit.txt'
-    non_lin_fit_plot(filename)
+    #filename = 'Voigt_non_lin_fit.txt'
+    #non_lin_fit_plot(filename)
     

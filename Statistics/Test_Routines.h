@@ -65,6 +65,8 @@ namespace testing{
 
 	void diode_voltage_data_fit(); 
 
+	void diode_voltage_data_fit_test(); 
+
 	void Lorentzian(double x, std::vector<double>& a, double* y, std::vector<double>& dyda, int& na);
 
 	void Lorentzian_data_fit(); 
