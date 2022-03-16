@@ -108,7 +108,9 @@ int main()
 
 	//testing::Lorentz_Voigt_Fit_Analysis(); 
 
-	testing::Ring_Down_data_fit(); 
+	//testing::Ring_Down_data_fit(); 
+
+	testing::Ring_Down_data_fit_test(); 
 	
 	std::cout<<"Press enter to close console\n";
 	std::cin.get(); 

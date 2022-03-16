@@ -359,6 +359,9 @@ void vecut::read_into_matrix(std::string &filename, std::vector<std::vector<doub
 	// store the data in a matrix of size n_rows * n_cols
 	// R. Sheehan 18 - 12 - 2018
 
+	// Updated to be able to accommodate file headers
+	// R. Sheehan 16 - 3 - 2022
+
 	try {
 		std::ifstream the_file;
 		the_file.open(filename, std::ios_base::in);

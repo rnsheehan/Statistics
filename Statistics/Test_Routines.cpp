@@ -2847,3 +2847,30 @@ void testing::Ring_Down_data_fit()
 	a_guess.clear(); ia.clear(); covar.clear(); alpha.clear();
 	a.clear();
 }
+
+void testing::Ring_Down_data_fit_test()
+{
+	// Apply LM method to measured ring down data
+	// R. Sheehan 16 - 3 - 2022
+
+	// Read in the measured spectral data
+	std::string filename = "LC_LT372_RAW_07_03_2022_11_01_M2.txt";
+
+	int npts, n_rows, npars = 4, n_cols, indx_max = 0;
+	double spread = 0.15, spctr_max = -500.0, f_max = 0, f_start, f_end, scale_fac;
+
+	time_t rawtime;
+	time(&rawtime);
+	long idum = (-static_cast<long>(rawtime)); // randomised seed for rng
+
+	std::vector<std::vector<double>> the_data;
+
+	vecut::read_into_matrix(filename, the_data, n_rows, n_cols, true);
+
+	vecut::print_mat(the_data); 
+
+	//for (int i = 0; i < 4; i++)the_data[i].erase(); 
+
+	//std::cout << "\n";
+	//vecut::print_mat(the_data);
+}

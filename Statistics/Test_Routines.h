@@ -92,6 +92,8 @@ namespace testing{
 	void Ring_Down(double x, std::vector<double>& a, double* y, std::vector<double>& dyda, int& na);
 
 	void Ring_Down_data_fit();
+
+	void Ring_Down_data_fit_test();
 }
 
 #endif
