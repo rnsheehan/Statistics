@@ -2727,3 +2727,123 @@ void testing::Lorentz_Voigt_Fit_Analysis()
 
 	write.close(); 
 }
+
+void testing::Ring_Down(double x, std::vector<double>& a, double* y, std::vector<double>& dyda, int& na)
+{
+	// Definition of the model used to approximate a gas ring down process
+	// a stores Ring Down parameters a = { A, tau, B}
+	// a[0] = A, a[1] = tau, a[2] = B
+	// A is an amplitude fitting factor usually expressed in units of mV
+	// tau is the Ring Down characterisation time usually expressed in units of us
+	// B is an offset from zero parameter usually expressed in units of mV
+	// Ring_Down value is given by *y
+	// dyda is array that stores value of derivative of Ring_Down function wrt each parameter in a
+	// Dimensions of the arrays are a[0..na-1], dyda[0..na-1]
+	// na is no. parameters
+	// R. Sheehan 16 - 3 - 2021
+
+	try {
+		double arg = x / a[1]; // ( t / tau )
+		double exp_arg = exp(-1.0 * arg); // exp( -( t / tau ) )
+		*y = ( a[0] * exp_arg ) + a[2]; // R = A exp( -(t / tau) ) + B
+		dyda[1] = (a[0]/a[1])*arg*exp_arg; // \partial R / \partial tau
+		dyda[0] = exp_arg; // \partial R / \partial A
+		dyda[2] = 1.0; // \partial T / \partial B
+	}
+	catch (std::invalid_argument& e) {
+		std::cerr << e.what();
+	}
+}
+
+void testing::Ring_Down_data_fit()
+{
+	// Apply LM method to measured Ring-Down voltage data
+	// R. Sheehan 16 - 3 - 2022
+
+	double A = 3.5; // Amplitude Parameter (mV)
+	double tau = 55; // Ring-Down Time Characterisation Parameter ( us )
+	double B = 5; // Offset Parameter (mV)
+	double t0 = 50; // time after initial decay ( us )
+	double y = 0.0; //computed voltage value
+
+	int npars = 3;
+	std::vector<double> a(npars, 0.0);
+	std::vector<double> dyda(npars, 0.0);
+
+	// Initial guesses for the parameters
+	a[0] = A; a[1] = tau; a[2] = B;
+
+	testing::Ring_Down(t0, a, &y, dyda, npars);
+
+	std::cout << "Ring-Down Fit Test Evaluation\n";
+	std::cout << "Ring-Down time value: " << t0 << " us\n";
+	std::cout << "Ring-Down voltage value: " << y << " V\n";
+	std::cout << "Der wrt A: " << dyda[0] << "\n";
+	std::cout << "Der wrt tau: " << dyda[1] << "\n";
+	std::cout << "Der wrt B: " << dyda[2] << "\n\n";
+	std::cout << "Rign-Down Equation Fit\n";
+
+	// Generate data to use in the fit process
+	int npts;
+	long idum = (-1011);
+	double spread, xlow, xhigh, deltax, xpos, yval;
+
+	// Generate initial data set
+	xlow = 0; xhigh = 300.0; deltax = 1.0;
+	npts = (int)(1.0 + ((xhigh - xlow) / deltax));
+
+	std::vector<double> xdata(npts, 0.0);
+	std::vector<double> ydata(npts, 0.0);
+	std::vector<double> sigdata(npts, 0.0);
+
+	spread = 0.1; // variance of the noise being added to the signal
+	xpos = xlow;
+	for (int i = 0; i < npts; i++) {
+
+		Ring_Down(xpos, a, &yval, dyda, npars); // evaluate the diode-voltage function
+
+		xdata[i] = xpos;
+
+		yval *= rng::gasdev1(&idum, 1.0, template_funcs::DSQR(spread)); // add noise to the signal value
+
+		ydata[i] = yval;
+
+		sigdata[i] = fabs(yval) > 0.0 ? spread * yval : spread; // sigdata cannot have zero values
+
+		xpos += deltax;
+	}
+
+	// Perform the best it search for the data set
+	int ITMAX = 10;
+
+	double TOL = 0.001;
+	double chisq = 0.0;
+
+	// Declare the necessary arrays
+	std::vector<std::vector<double>> covar = vecut::array_2D(npars, npars);
+	std::vector<std::vector<double>> alpha = vecut::array_2D(npars, npars);
+
+	// define the initial guesses to the parameters to be determined
+	std::vector<double> a_guess(npars, 0.0);
+	std::vector<int> ia(npars, 1); // tell the algorithm that you want to locate all parameters 
+
+	//ia[1] = 0; // search for params 0 and 2, fix param 1 value
+	a_guess[0] = 7.0; a_guess[1] = 50.0; a_guess[2] = 0.0; // initial guesses for the parameters
+
+	// run the fitting algorithm
+	fit::non_lin_fit(xdata, ydata, sigdata, npts, a_guess, ia, npars, covar, alpha, &chisq, Ring_Down, ITMAX, TOL, true);
+
+	// compute the residuals for the fit
+	std::vector<std::vector<double>> data;
+	fit::residuals(xdata, ydata, sigdata, npts, a_guess, npars, Ring_Down, data);
+
+	// output the residuals 
+	std::string thefile = "Ring_Down_non_lin_fit.txt";
+
+	int nrows = 5;
+	vecut::write_into_file(thefile, data, nrows, npts);
+
+	xdata.clear(); ydata.clear(); sigdata.clear();
+	a_guess.clear(); ia.clear(); covar.clear(); alpha.clear();
+	a.clear();
+}

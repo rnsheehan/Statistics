@@ -94,7 +94,7 @@ int main()
 
 	//testing::diode_voltage_data_fit(); 
 
-	testing::diode_voltage_data_fit_test(); 
+	//testing::diode_voltage_data_fit_test(); 
 
 	//testing::Lorentzian_data_fit();
 	
@@ -107,6 +107,8 @@ int main()
 	//testing::Voigt_data_fit_test();
 
 	//testing::Lorentz_Voigt_Fit_Analysis(); 
+
+	testing::Ring_Down_data_fit(); 
 	
 	std::cout<<"Press enter to close console\n";
 	std::cin.get(); 

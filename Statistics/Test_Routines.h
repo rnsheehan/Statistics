@@ -88,6 +88,10 @@ namespace testing{
 	void Voigt_HWHM(double xlow, double xhigh, std::vector<double>& a, int& na, double* HWHM, bool loud = false);
 
 	void Lorentz_Voigt_Fit_Analysis();
+
+	void Ring_Down(double x, std::vector<double>& a, double* y, std::vector<double>& dyda, int& na);
+
+	void Ring_Down_data_fit();
 }
 
 #endif
