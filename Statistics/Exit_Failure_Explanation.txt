@@ -1,7 +1,7 @@
 Program Exit Explanation
 
-Error occurred: Wed Oct 27 12:09:11 2021
+Error occurred: Mon Mar 21 22:27:09 2022
 
-Error: void read_into_matrix(std::string &filename, std::vector<std::vector<double>> &data, int &n_rows, int &n_cols, bool loud = false)
-Cannot open: Smpl_LLM.csv
+Error: void vecut::print_to_screen(std::vector<std::vector<double>> &matrix)
+Matrix has not been assigned values
 

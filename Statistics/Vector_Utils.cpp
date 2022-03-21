@@ -384,22 +384,41 @@ void vecut::read_into_matrix(std::string &filename, std::vector<std::vector<doub
 			n_rows = 0; n_cols = 0;
 
 			// Determine which token separates data in the file
-			the_file.seekg(1, std::ios::beg); // move to the start of the file
+			the_file.seekg(0, std::ios::beg); // move to the start of the file
 			std::getline(the_file, line, endline); 
 			if (line.find(tab_token) != std::string::npos) sep_token = tab_token; 
 			if (line.find(comma_token) != std::string::npos) sep_token = comma_token;
 
-			if (loud) std::cout << filename << " uses " << sep_token << " as a token\n";
+			// Try to determine where header starts and ends
+			the_file.clear(); 
+			the_file.seekg(0, std::ios::beg); // move to the start of the file
+			int header = 0; 
+			int offset = 0; 
+			while (std::getline(the_file, line, endline)) {
+				if (!line.find('#')) {
+					std::cout << line << "\n"; 
+					header++;
+					offset = the_file.tellg(); 
+				}
+				else {
+					if (line.find(tab_token) != std::string::npos) sep_token = tab_token;
+					if (line.find(comma_token) != std::string::npos) sep_token = comma_token;
+					break; 
+				}
+			}
 
-			// Determine if first line is a file header
-			if (isalpha(line[2])) has_header = true;
+			if (loud)std::cout << "Header has " << header << " lines\n";
+			if (loud) std::cout << "Last file position: " << offset << "\n";
+			if (loud) std::cout << "Line: " << line << "\n";
+			if (loud) std::cout << filename << " uses " << sep_token << " as a token\n";
 
 			// Count the number of rows and columns
 			// This only seems to work when the data are separated by ',' also works for '\t' and ' '
 			// http://www.cplusplus.com/reference/string/string/getline/
 			// getline (istream& is, string& str, char delim)
 			// Extracts characters from is and stores them into str until the delimitation character delim is found
-			the_file.seekg( has_header ? 1 : 0, std::ios::beg); // move to the start of the file
+			the_file.clear(); // empty a buffer, needed to ensure data can be read from the file
+			the_file.seekg(0, std::ios::beg); // move to the start of the file
 			while (std::getline(the_file, line, endline)) {
 				n_rows++;
 				std::istringstream linestream(line);
@@ -409,6 +428,8 @@ void vecut::read_into_matrix(std::string &filename, std::vector<std::vector<doub
 					}
 				}
 			}
+
+			n_rows -= header; // subtract the no. of rows that are actually in the header
 
 			if (loud) std::cout << filename << " contains " << n_rows << " rows and " << n_cols << " columns\n"; 
 
@@ -420,19 +441,21 @@ void vecut::read_into_matrix(std::string &filename, std::vector<std::vector<doub
 				}
 
 				the_file.clear(); // empty a buffer, needed to ensure data can be read from the file
-				the_file.seekg(has_header ? 1 : 0, std::ios::beg); // move to the start of the file
+				the_file.seekg(0, std::ios::beg); // move to the start of the file
 
 				int i, j;
 				
 				i = 0;
 				while (std::getline(the_file, line, endline)) {
 					std::istringstream linestream(line);
-					j = 0;
-					while (std::getline(linestream, item, sep_token)) {
-						data[i][j] = atof(item.c_str());
-						j++;
+					if (isdigit(line[0])) {
+						j = 0;
+						while (std::getline(linestream, item, sep_token)) {
+							data[i][j] = atof(item.c_str());
+							j++;
+						}
+						i++;
 					}
-					i++;
 				}
 
 				the_file.close(); 
