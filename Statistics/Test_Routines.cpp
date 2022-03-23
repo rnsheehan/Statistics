@@ -2912,7 +2912,7 @@ void testing::Ring_Down_data_fit_test()
 	std::vector<double> a_guess(npars, 0.0);
 	std::vector<int> ia(npars, 1); // tell the algorithm that you want to locate all parameters 
 
-	a_guess[0] = 7.0; a_guess[1] = 50.0; a_guess[2] = 0.0; // initial guesses for the parameters
+	a_guess[0] = 7.0; a_guess[1] = 50.0; a_guess[2] = 0.2; // initial guesses for the parameters
 
 	// run the fitting algorithm
 	fit::non_lin_fit(xdata, ydata, sigdata, npts, a_guess, ia, npars, covar, alpha, &chisq, Ring_Down, ITMAX, TOL, true);
