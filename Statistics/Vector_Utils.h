@@ -21,7 +21,7 @@ namespace vecut {
 
 	void read_into_vector(std::string &filename, std::vector<double> &data, int &n_pts, bool loud = false);
 	void write_into_file(std::string &filename, std::vector<double> &data, bool loud = false); 
-	void read_into_matrix(std::string &filename, std::vector<std::vector<double>> &data, int &n_rows, int &n_cols, bool loud = false);
+	void read_into_matrix(std::string &filename, std::vector<std::vector<double>> &data, int &n_rows, int &n_cols, char cmnt_tkn = '#', bool loud = false);
 	void write_into_file(std::string& filename, std::vector<std::vector<double>>& data, int& n_rows, int& n_cols, bool loud = false);
 
 	void print_vec(std::vector<double>& arr);

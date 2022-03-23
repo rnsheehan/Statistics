@@ -2140,7 +2140,7 @@ void testing::Gaussian_data_fit_test()
 
 	// take a look at the goodness of fit statistics
 	double chisqr = 0.0, rsqr = 0.0, dof = static_cast<int>(npts - npars), gof = 0.0;
-	fit::goodness_of_fit(xdata, ydata, data[4], npts, a_guess, npars, Lorentzian, &chisqr, &dof, &rsqr, &gof);
+	fit::goodness_of_fit(xdata, ydata, data[4], npts, a_guess, npars, Gaussian, &chisqr, &dof, &rsqr, &gof);
 
 	xdata.clear(); ydata.clear(); sigdata.clear();
 	a_guess.clear(); ia.clear(); covar.clear(); alpha.clear();
@@ -2854,10 +2854,12 @@ void testing::Ring_Down_data_fit_test()
 	// R. Sheehan 16 - 3 - 2022
 
 	// Read in the measured spectral data
-	std::string filename = "LC_LT372_RAW_07_03_2022_11_01_M2.txt";
+	//std::string filename = "LC_LT372_PROC_22_03_2022_12_02_M0.txt";
+	std::string filename = "LC_LT372_PROC_22_03_2022_13_02_M0.txt";
+	//std::string filename = "LC_LT372_PROC_22_03_2022_13_52_M0.txt";
 
-	int npts, n_rows, npars = 4, n_cols, indx_max = 0;
-	double spread = 0.15, spctr_max = -500.0, f_max = 0, f_start, f_end, scale_fac;
+	int npts, n_rows, npars = 3, n_cols;
+	double spread = 0.15;
 
 	time_t rawtime;
 	time(&rawtime);
@@ -2865,12 +2867,71 @@ void testing::Ring_Down_data_fit_test()
 
 	std::vector<std::vector<double>> the_data;
 
-	vecut::read_into_matrix(filename, the_data, n_rows, n_cols, true);
+	vecut::read_into_matrix(filename, the_data, n_rows, n_cols, '#', true);
 
-	vecut::print_mat(the_data); 
+	// Change the units of the imported data time / us, voltage / mV
+	for (int i = 0; i < n_rows; i++) {
+		the_data[i][0] *= 1.0e+6; 
+		the_data[i][1] *= 1.0e+3; 
+	}
 
-	//for (int i = 0; i < 4; i++)the_data[i].erase(); 
+	std::cout << "The Data\n"; 
+	vecut::print_mat(the_data);
 
-	//std::cout << "\n";
-	//vecut::print_mat(the_data);
+	// store data locally
+	std::vector<double> xdata;
+	std::vector<double> ydata;
+	std::vector<double> sigdata;
+
+	npts = 1024;
+
+	for (int i = 0; i < npts; i++) {
+		xdata.push_back(the_data[i][0]); 
+		ydata.push_back(the_data[i][1]); 
+		if (fabs(the_data[i][1]) > 0.0) {
+			sigdata.push_back(spread * the_data[i][1]);
+		}
+		else {
+			sigdata.push_back(spread); // sigdata cannot have zero values
+		}
+	}
+
+	//npts = static_cast<int>(xdata.size()); 
+
+	// Perform the best it search for the data set
+	int ITMAX = 10;
+
+	double TOL = 0.001;
+	double chisq = 0.0;
+
+	// Declare the necessary arrays
+	std::vector<std::vector<double>> covar = vecut::array_2D(npars, npars);
+	std::vector<std::vector<double>> alpha = vecut::array_2D(npars, npars);
+
+	// define the initial guesses to the parameters to be determined
+	std::vector<double> a_guess(npars, 0.0);
+	std::vector<int> ia(npars, 1); // tell the algorithm that you want to locate all parameters 
+
+	a_guess[0] = 7.0; a_guess[1] = 50.0; a_guess[2] = 0.0; // initial guesses for the parameters
+
+	// run the fitting algorithm
+	fit::non_lin_fit(xdata, ydata, sigdata, npts, a_guess, ia, npars, covar, alpha, &chisq, Ring_Down, ITMAX, TOL, true);
+
+	// compute the residuals for the fit
+	std::vector<std::vector<double>> data;
+	fit::residuals(xdata, ydata, sigdata, npts, a_guess, npars, Ring_Down, data);
+
+	// output the residuals 
+	std::string thefile = "Ring_Down_non_lin_fit.txt";
+
+	int nrows = 5;
+	vecut::write_into_file(thefile, data, nrows, npts);
+
+	// take a look at the goodness of fit statistics
+	double chisqr = 0.0, rsqr = 0.0, dof = static_cast<int>(npts - npars), gof = 0.0;
+	fit::goodness_of_fit(xdata, ydata, data[4], npts, a_guess, npars, Ring_Down, &chisqr, &dof, &rsqr, &gof);
+
+	xdata.clear(); ydata.clear(); sigdata.clear();
+	a_guess.clear(); ia.clear(); covar.clear(); alpha.clear();
+	data.clear(); the_data.clear();
 }

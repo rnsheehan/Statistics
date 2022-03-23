@@ -94,7 +94,7 @@ int main()
 
 	//testing::diode_voltage_data_fit(); 
 
-	testing::diode_voltage_data_fit_test(); 
+	//testing::diode_voltage_data_fit_test(); 
 
 	//testing::Lorentzian_data_fit();
 	

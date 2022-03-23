@@ -1,7 +1,7 @@
 Program Exit Explanation
 
-Error occurred: Mon Mar 21 22:27:09 2022
+Error occurred: Wed Mar 23 10:17:00 2022
 
-Error: void vecut::print_to_screen(std::vector<std::vector<double>> &matrix)
-Matrix has not been assigned values
+Error: void lin_alg::gaussj()
+Singular Matrix-2
 

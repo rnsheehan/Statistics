@@ -353,7 +353,7 @@ void vecut::print_cmat(std::vector<std::vector<std::complex<double>>>& matrix)
 	}
 }
 
-void vecut::read_into_matrix(std::string &filename, std::vector<std::vector<double>> &data, int &n_rows, int &n_cols, bool loud)
+void vecut::read_into_matrix(std::string &filename, std::vector<std::vector<double>> &data, int &n_rows, int &n_cols, char cmnt_tkn, bool loud)
 {
 	// read an array of data from a file
 	// store the data in a matrix of size n_rows * n_cols
@@ -378,27 +378,19 @@ void vecut::read_into_matrix(std::string &filename, std::vector<std::vector<doub
 			char endline = '\n';			
 			char tab_token = '\t'; 
 			char comma_token = ','; 
-			char sep_token; 
+			char sep_token = tab_token; // default value
 
-			// Initialise the values to zero
-			n_rows = 0; n_cols = 0;
-
+			// Determine where header starts and ends
 			// Determine which token separates data in the file
-			the_file.seekg(0, std::ios::beg); // move to the start of the file
-			std::getline(the_file, line, endline); 
-			if (line.find(tab_token) != std::string::npos) sep_token = tab_token; 
-			if (line.find(comma_token) != std::string::npos) sep_token = comma_token;
-
-			// Try to determine where header starts and ends
 			the_file.clear(); 
 			the_file.seekg(0, std::ios::beg); // move to the start of the file
 			int header = 0; 
 			int offset = 0; 
 			while (std::getline(the_file, line, endline)) {
-				if (!line.find('#')) {
-					std::cout << line << "\n"; 
+				if (!line.find(cmnt_tkn)) {
+					if(loud) std::cout << line << "\n"; 
 					header++;
-					offset = the_file.tellg(); 
+					offset = the_file.tellg(); // record where you are in the file buffer
 				}
 				else {
 					if (line.find(tab_token) != std::string::npos) sep_token = tab_token;
@@ -407,9 +399,9 @@ void vecut::read_into_matrix(std::string &filename, std::vector<std::vector<doub
 				}
 			}
 
-			if (loud)std::cout << "Header has " << header << " lines\n";
+			if (loud) std::cout << "Header has " << header << " lines\n";
 			if (loud) std::cout << "Last file position: " << offset << "\n";
-			if (loud) std::cout << "Line: " << line << "\n";
+			if (loud) std::cout << "First line of data: " << line << "\n";
 			if (loud) std::cout << filename << " uses " << sep_token << " as a token\n";
 
 			// Count the number of rows and columns
@@ -417,6 +409,10 @@ void vecut::read_into_matrix(std::string &filename, std::vector<std::vector<doub
 			// http://www.cplusplus.com/reference/string/string/getline/
 			// getline (istream& is, string& str, char delim)
 			// Extracts characters from is and stores them into str until the delimitation character delim is found
+
+			// Initialise the values to zero
+			n_rows = 0; n_cols = 0;
+
 			the_file.clear(); // empty a buffer, needed to ensure data can be read from the file
 			the_file.seekg(0, std::ios::beg); // move to the start of the file
 			while (std::getline(the_file, line, endline)) {
@@ -458,7 +454,7 @@ void vecut::read_into_matrix(std::string &filename, std::vector<std::vector<doub
 					}
 				}
 
-				the_file.close(); 
+				the_file.clear(); the_file.close();
 			}
 			else {
 				std::string reason;
