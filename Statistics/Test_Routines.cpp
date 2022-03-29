@@ -1157,6 +1157,7 @@ void testing::fgauss(double x, std::vector<double> &a, double *y, std::vector<do
 	// a[i] = amp_{k}, a[i+1] = centre_{k}, a[i+2] = width_{k}
 	// Dimensions of the arrays are a[0..na-1], dyda[0..na-1]
 	// k = 1..na/3
+	// R. Sheehan 12 - 7 - 2018
 
 	try {
 		int i;
