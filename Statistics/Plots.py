@@ -81,11 +81,11 @@ if __name__ == '__main__':
     
     print(pwd)
     
-    #filename = "Diode_non_lin_fit.txt"
-    #non_lin_fit_plot(filename)
-    
-    filename = "Ring_Down_non_lin_fit.txt"
+    filename = "Diode_non_lin_fit.txt"
     non_lin_fit_plot(filename)
+    
+    #filename = "Ring_Down_non_lin_fit.txt"
+    #non_lin_fit_plot(filename)
     
     #filename = "Gauss_non_lin_fit.txt"
     #filename = 'Diode_non_lin_fit.txt'

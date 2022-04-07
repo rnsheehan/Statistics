@@ -92,9 +92,11 @@ int main()
 
 	//testing::monte_carlo_test(); 
 
-	//testing::diode_voltage_data_fit(); 
+	testing::diode_voltage_data_fit(); 
 
 	//testing::diode_voltage_data_fit_test(); 
+
+	//testing::resistive_diode_voltage_data_fit();
 
 	//testing::Lorentzian_data_fit();
 	
@@ -110,7 +112,7 @@ int main()
 
 	//testing::Ring_Down_data_fit(); 
 
-	testing::Ring_Down_data_fit_test(); 
+	//testing::Ring_Down_data_fit_test(); 
 	
 	std::cout<<"Press enter to close console\n";
 	std::cin.get(); 

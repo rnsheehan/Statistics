@@ -63,9 +63,13 @@ namespace testing{
 
 	void diode_voltage(double x, std::vector<double>& a, double* y, std::vector<double>& dyda, int& na);
 
+	void resistive_diode_voltage(double x, std::vector<double>& a, double* y, std::vector<double>& dyda, int& na);
+
 	void diode_voltage_data_fit(); 
 
 	void diode_voltage_data_fit_test(); 
+
+	void resistive_diode_voltage_data_fit();
 
 	void Lorentzian(double x, std::vector<double>& a, double* y, std::vector<double>& dyda, int& na);
 
