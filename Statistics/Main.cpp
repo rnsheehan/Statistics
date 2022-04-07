@@ -92,11 +92,11 @@ int main()
 
 	//testing::monte_carlo_test(); 
 
-	testing::diode_voltage_data_fit(); 
+	//testing::diode_voltage_data_fit(); 
 
 	//testing::diode_voltage_data_fit_test(); 
 
-	//testing::resistive_diode_voltage_data_fit();
+	testing::resistive_diode_voltage_data_fit();
 
 	//testing::Lorentzian_data_fit();
 	
