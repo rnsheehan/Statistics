@@ -1478,48 +1478,11 @@ void testing::diode_voltage(double x, std::vector<double>& a, double* y, std::ve
 	}
 }
 
-//void testing::resistive_diode_voltage(double x, std::vector<double>& a, double* y, std::vector<double>& dyda, int& na)
-//{
-//	// function that computes the diode voltage for input current x = I [mA] includes the contribution of a series resistance Rs [kOhm]
-//	// a stores diode parameters a = { eta, T, Is, Rs }
-//	// a[0] = eta, a[1] = T, a[2] = Is, a[3] = Rs
-//	// eta is the diode ideality, dimensionless constant between 1 - 10
-//	// T is the diode temperature, must be expressed in units of Celcius, converted to Kelvin during fit
-//	// Is diode saturation current, typically Is ~ 10^{-14} A = 10^{-11} mA
-//	// Rs is a resistor in series with the diode, expressed in units of kOhm, it's a convenient way to model the effect of metal contacts
-//	// diode voltage value is given by *y
-//	// dyda is array that stores value of derivative of diode voltage function wrt each parameter in a
-//	// Dimensions of the arrays are a[0..na-1], dyda[0..na-1]
-//	// na is no. parameters
-//	// R. Sheehan 7 - 4 - 2022
-//
-//	try {
-//		double kB_q = 8.61733e-5; // ( k_{B} / q ) in units of J / C K
-//		double Tkelvin = 273.15 + a[1]; // convert temperature to Kelvin and multiply by ( k_{B} / q ) 
-//		double Tterm = kB_q * Tkelvin; // convert temperature to Kelvin and multiply by ( k_{B} / q )
-//		//double Tterm = kB_q * a[1]; // convert temperature to Kelvin and multiply by ( k_{B} / q )
-//		double Iratio = (x / a[2]); // I_{d} / I_{s}
-//		double arg = 1.0 + Iratio; // compute term 1 + (I_{d} / I_{s})
-//		double Rterm = x * a[3]; // R_{s} I_{d}
-//		double log_term = log(arg); // log ( 1 + (I_{d} / I_{s}) )
-//		double mid_term = Tterm * log_term; // ( kB_q * Tkelvin ) * log ( 1 + (I_{d} / I_{s}) )
-//		*y = a[0] * mid_term + Rterm; // eta * Tterm * log ( 1 + I_{d} / I_{s} ) + R_{s} I_{d}
-//		dyda[0] = mid_term; // \partial V_{d} / \partial \eta
-//		dyda[1] = a[0] * kB_q * log_term; // \partial V_{d} / \partial T
-//		dyda[2] = (-1.0 * a[0] * Tterm * Iratio) / (a[2] * arg); // \partial V_{d} / I_{s}
-//		dyda[3] = x; // \partial V_{d} / R_{s}
-//	}
-//	catch (std::invalid_argument& e) {
-//		std::cerr << e.what();
-//	}
-//}
-
 void testing::resistive_diode_voltage(double x, std::vector<double>& a, double* y, std::vector<double>& dyda, int& na)
 {
 	// function that computes the diode voltage for input current x = I [mA] includes the contribution of a series resistance Rs [kOhm]
-	// this is a simplified version, mostly interested in attempting to fit to the series resistance term
-	// a stores diode parameters a = { c1, c2, Rs }
-	// a[0] = c1 = (eta k_{B} T / q), a[1] = c2 = /I_{s}, a[2] = Rs
+	// a stores diode parameters a = { eta, T, Is, Rs }
+	// a[0] = eta, a[1] = T, a[2] = Is, a[3] = Rs
 	// eta is the diode ideality, dimensionless constant between 1 - 10
 	// T is the diode temperature, must be expressed in units of Celcius, converted to Kelvin during fit
 	// Is diode saturation current, typically Is ~ 10^{-14} A = 10^{-11} mA
@@ -1531,17 +1494,54 @@ void testing::resistive_diode_voltage(double x, std::vector<double>& a, double* 
 	// R. Sheehan 7 - 4 - 2022
 
 	try {
-		double arg = 1.0 + (x / a[1]); 
-		double log_arg = log(arg); 
-		*y = a[0] * log_arg + a[2] * x; // c1 * log ( 1 + c2 I_{d} ) + R_{s} I_{d}
-		dyda[0] = log_arg; // \partial V_{d} / \partial c1
-		dyda[1] = ( a[0] * x ) / arg; // \partial V_{d} / \partial c2		
-		dyda[2] = x; // \partial V_{d} / R_{s}
+		double kB_q = 8.61733e-5; // ( k_{B} / q ) in units of J / C K
+		double Tkelvin = 273.15 + a[1]; // convert temperature to Kelvin and multiply by ( k_{B} / q ) 
+		double Tterm = kB_q * Tkelvin; // convert temperature to Kelvin and multiply by ( k_{B} / q )
+		double Iratio = (x / a[2]); // I_{d} / I_{s}
+		double arg = 1.0 + Iratio; // compute term 1 + (I_{d} / I_{s})
+		double Rterm = x * a[3]; // R_{s} I_{d}
+		double log_term = log(arg); // log ( 1 + (I_{d} / I_{s}) )
+		double mid_term = Tterm * log_term; // ( kB_q * Tkelvin ) * log ( 1 + (I_{d} / I_{s}) )
+		*y = a[0] * mid_term + Rterm; // eta * Tterm * log ( 1 + I_{d} / I_{s} ) + R_{s} I_{d}
+		dyda[0] = mid_term; // \partial V_{d} / \partial \eta
+		dyda[1] = a[0] * kB_q * log_term; // \partial V_{d} / \partial T
+		dyda[2] = (-1.0 * a[0] * Tterm * Iratio) / (a[2] * arg); // \partial V_{d} / I_{s}
+		dyda[3] = x; // \partial V_{d} / R_{s}
 	}
 	catch (std::invalid_argument& e) {
 		std::cerr << e.what();
 	}
 }
+
+//void testing::resistive_diode_voltage(double x, std::vector<double>& a, double* y, std::vector<double>& dyda, int& na)
+//{
+//	// function that computes the diode voltage for input current x = I [mA] includes the contribution of a series resistance Rs [kOhm]
+//	// this is a simplified version, mostly interested in attempting to fit to the series resistance term
+//	// a stores diode parameters a = { c1, c2, Rs }
+//	// a[0] = c1 = (eta k_{B} T / q), a[1] = c2 = I_{s}, a[2] = Rs
+//	// eta is the diode ideality, dimensionless constant between 1 - 10
+//	// T is the diode temperature, must be expressed in units of Celcius, converted to Kelvin during fit
+//	// Is diode saturation current, typically Is ~ 10^{-14} A = 10^{-11} mA
+//	// Rs is a resistor in series with the diode, expressed in units of kOhm, it's a convenient way to model the effect of metal contacts
+//	// diode voltage value is given by *y
+//	// dyda is array that stores value of derivative of diode voltage function wrt each parameter in a
+//	// Dimensions of the arrays are a[0..na-1], dyda[0..na-1]
+//	// na is no. parameters
+//	// R. Sheehan 7 - 4 - 2022
+//
+//	try {
+//		double Iratio = (x / a[1]); // I_{d} / c2
+//		double arg = 1.0 + Iratio; // 1 + ( I_{d} / c2 )
+//		double log_arg = log(arg); // log ( 1 + ( I_{d} / c2 ) )
+//		*y = ( a[0] * log_arg ) + ( a[2] * x ); // c1 * log ( 1 + I_{d} / c2 ) + R_{s} I_{d}
+//		dyda[0] = log_arg; // \partial V_{d} / \partial c1
+//		dyda[1] = ( -1.0 * ( a[0] / a[1] ) * Iratio )/arg; // \partial V_{d} / \partial c2		
+//		dyda[2] = x; // \partial V_{d} / R_{s}
+//	}
+//	catch (std::invalid_argument& e) {
+//		std::cerr << e.what();
+//	}
+//}
 
 void testing::diode_voltage_data_fit()
 {
@@ -1730,29 +1730,28 @@ void testing::resistive_diode_voltage_data_fit()
 	// R. Sheehan 7 - 4 - 2022
 
 	double eta = 1.5; // diode ideality (unitless)
-	double T = 22 + 273.15; // diode temperature ( Kelvin )
+	double T = 22; // diode temperature ( Celcius )
 	double Is = 5e-11; // diode saturation current (mA)
 	double Id = 50; // diode current (mA)
-	double c1 = 0.03; // c1 = eta k_{B} T / q ~ 0.03
-	double c2 = Is; 
-	double Rs = (10.0 / 1000.0); // diode series resistance (kOhm)
+	double Rs = (3.7 / 1000.0); // diode series resistance (kOhm)
 	double y = 0.0; //computed voltage value
 
-	int npars = 3;
+	int npars = 4;
 	std::vector<double> a(npars, 0.0);
 	std::vector<double> dyda(npars, 0.0);
 
 	// Initial guesses for the parameters
-	a[0] = c1; a[1] = c2; a[2] = Rs; 
+	a[0] = eta; a[1] = T; a[2] = Is; a[3] = Rs; 
 
 	testing::resistive_diode_voltage(Id, a, &y, dyda, npars);
 
 	std::cout << "Diode Fit Test Evaluation\n";
 	std::cout << "Diode current value: " << Id << " mA\n";
 	std::cout << "Diode voltage value: " << y << " V\n";
-	std::cout << "Der wrt c1: " << dyda[0] << "\n";
-	std::cout << "Der wrt c2: " << dyda[1] << "\n";
-	std::cout << "Der wrt Rs: " << dyda[2] << "\n\n";
+	std::cout << "Der wrt eta: " << dyda[0] << "\n";
+	std::cout << "Der wrt T: " << dyda[1] << "\n";
+	std::cout << "Der wrt Is: " << dyda[2] << "\n";
+	std::cout << "Der wrt Rs: " << dyda[3] << "\n\n";
 	std::cout << "Diode Equation Fit\n";
 
 	// Generate data to use in the fit process
@@ -1770,11 +1769,11 @@ void testing::resistive_diode_voltage_data_fit()
 	std::vector<double> ydata(npts, 0.0);
 	std::vector<double> sigdata(npts, 0.0);
 
-	spread = 0.001; // variance of the noise being added to the signal
+	spread = 0.01; // variance of the noise being added to the signal
 	xpos = xlow;
 	for (int i = 0; i < npts; i++) {
 
-		diode_voltage(xpos, a, &yval, dyda, npars); // evaluate the diode-voltage function
+		resistive_diode_voltage(xpos, a, &yval, dyda, npars); // evaluate the diode-voltage function
 
 		xdata[i] = xpos;
 
@@ -1801,15 +1800,17 @@ void testing::resistive_diode_voltage_data_fit()
 	std::vector<double> a_guess(npars, 0.0);
 	std::vector<int> ia(npars, 1); // tell the algorithm that you want to locate all parameters 
 
-	//ia[1] = 0; // search for params 0 and 2, fix param 1 value
-	a_guess[0] = 0.05; a_guess[1] = 1.0e-11; a_guess[2] = 14.0/1000.0; // initial guesses for the parameters
+	ia[1] = 0; // search for params 0 and 2, fix param 1 value
+	a_guess[0] = 10; a_guess[1] = T; a_guess[2] = 4e-10; a_guess[3] = (20.0/1000.0); // initial guesses for the parameters
 
 	// run the fitting algorithm
 	fit::non_lin_fit(xdata, ydata, sigdata, npts, a_guess, ia, npars, covar, alpha, &chisq, resistive_diode_voltage, ITMAX, TOL, true);
 
+	std::cout << "\nEstimate of the series resistance: " << 1000.0 * a_guess[3] << " Ohm\n\n"; 
+
 	// compute the residuals for the fit
 	std::vector<std::vector<double>> data;
-	fit::residuals(xdata, ydata, sigdata, npts, a_guess, npars, diode_voltage, data);
+	fit::residuals(xdata, ydata, sigdata, npts, a_guess, npars, resistive_diode_voltage, data);
 
 	// output the residuals 
 	std::string thefile = "Diode_non_lin_fit.txt";
