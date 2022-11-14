@@ -1977,7 +1977,13 @@ void testing::Lorentzian_data_fit_test()
 	//std::string filename = "Sample_LLM.csv"; 
 	//std::string filename = "Lorentz_iodeal.csv"; // this is the same data set as Sample_LLM.csv
 	//std::string filename = "Smpl_LLM_7.txt";
-	std::string filename = "LLM_Spctrm_I_65.txt";
+	//std::string filename = "LLM_Spctrm_I_65.txt";
+
+	std::string dir_name = "C:\\users\\robertsheehan\\Research\\Laser_Physics\\Linewidth\\Data\\ESA_Spectra_Versus_VOA_Bias\\";
+	useful_funcs::set_directory(dir_name);
+	useful_funcs::get_directory();
+
+	std::string filename = "JDSU_DFB_T_20_I_50_V_300.txt";
 
 	int npts, n_rows, npars = 3, n_cols, indx_max = 0;
 	long idum = (-1011);
@@ -1999,7 +2005,7 @@ void testing::Lorentzian_data_fit_test()
 	//xdata = vecut::get_col(the_data, 0);
 	//ydata = vecut::get_col(the_data, 1);
 
-	scale_fac = 1.0e+6;  f_start = 70.0; f_end = 90.0;
+	scale_fac = 1.0e+6;  f_start = 45.0; f_end = 115.0;
 	for (int i = 0; i < n_rows; i++) {
 		if (the_data[i][0] > f_start && the_data[i][0] < f_end) {
 			xdata.push_back(the_data[i][0]);
@@ -2454,11 +2460,18 @@ void testing::Voigt_data_fit()
 void testing::Voigt_data_fit_test()
 {
 	// Apply LM method to measured linewidth spectrum data
+	// 
 	// R. Sheehan 27 - 10 - 2021
 
 	// Read in the measured spectral data
 	//std::string filename = "Smpl_LLM_11.txt";
-	std::string filename = "LLM_Spctrm_I_60.txt";
+	//std::string filename = "LLM_Spctrm_I_60.txt";
+
+	std::string dir_name = "C:\\users\\robertsheehan\\Research\\Laser_Physics\\Linewidth\\Data\\ESA_Spectra_Versus_VOA_Bias\\"; 
+	useful_funcs::set_directory(dir_name);
+	useful_funcs::get_directory(); 
+
+	std::string filename = "JDSU_DFB_T_20_I_50_V_300.txt"; 
 	
 	int npts, n_rows, npars = 4, n_cols, indx_max = 0;
 	double spread = 0.15, spctr_max = -500.0, f_max = 0, f_start, f_end, scale_fac;
@@ -2483,7 +2496,7 @@ void testing::Voigt_data_fit_test()
 	//xdata = vecut::get_col(the_data, 0);
 	//ydata = vecut::get_col(the_data, 1);
 
-	scale_fac = 1.0e+6;  f_start = 70.0; f_end = 90.0;
+	scale_fac = 1.0e+6;  f_start = 45.0; f_end = 115.0;
 	for (int i = 0; i < n_rows; i++) {
 		if (the_data[i][0] > f_start && the_data[i][0] < f_end) {
 			xdata.push_back(the_data[i][0]);
@@ -2678,14 +2691,17 @@ void testing::Lorentz_Voigt_Fit_Analysis()
 	// Save the fitting parameters, see if you can fit a model to the Voigt HWHM data
 	// R. Sheehan 13 - 12 - 2021
 
-	std::string data_home = "c:\\users\\robertsheehan\\Research\\Laser_Physics\\Linewidth\\Data\\Sample_Data"; 
-
+	//std::string data_home = "c:\\users\\robertsheehan\\Research\\Laser_Physics\\Linewidth\\Data\\Sample_Data"; 
+	std::string data_home = "C:\\users\\robertsheehan\\Research\\Laser_Physics\\Linewidth\\Data\\ESA_Spectra_Versus_VOA_Bias\\";
+	
 	useful_funcs::set_directory(data_home); 
-
 	useful_funcs::get_directory(); 
 
 	int n_files = 11, npts, n_rows, npars, n_cols, indx_max = 0, ITMAX = 50;
-	double spread = 0.15, spctr_max = -500.0, f_max = 0, scale_fac = 1.0e+6, f_start = 70.0, f_end = 90.0, TOL = 1e-3, chisq = 0.0;
+	double spread = 0.15, spctr_max = -500.0, f_max = 0, scale_fac = 1.0e+6, f_start = 60.0, f_end = 100.0, TOL = 1e-3, chisq = 0.0;
+
+	std::string Vvals[11] = {"000", "100", "200", "300", "325", "350", "360", "365", "370", "375", "400"};
+	double Vvolts[11] = { 0.0, 1.0, 2.0, 3.0, 3.25, 3.5, 3.6, 3.65, 3.7, 3.75, 4.0 }; 
 	
 	std::string file_tmplt; 
 	std::string file_out; 
@@ -2700,13 +2716,14 @@ void testing::Lorentz_Voigt_Fit_Analysis()
 	file_out = "Fitted_Parameter_Values.txt"; 
 	//std::ofstream write(file_out, std::ios_base::out , std::ios_base::app);
 	std::fstream write(file_out, std::ios_base::out|std::ios_base::app);
-	/*if (write.is_open()) {
+	if (write.is_open()) {
 		write << "Filename , Actual Peak / uW , Voigt h / uW , Voigt f_{0} / MHz , Voigt gamma / MHz , Voigt sigma / MHz , Voigt delta / MHz , Voigt peak / uW , Lorentz h / uW , Lorentz f_{0} / MHz , Lorentz gamma / MHz , Lorentz peak / uW\n"; 
-	}*/
+	}
 
 	for (int i = 1; i <=11; i++) {
-		file_tmplt = "Smpl_LLM_" + template_funcs::toString(i) + dottxt; // name of the file with data to be fitted
+		//file_tmplt = "Smpl_LLM_" + template_funcs::toString(i) + dottxt; // name of the file with data to be fitted
 		//file_tmplt = "LLM_Spctrm_I_" + template_funcs::toString(i) + dottxt; // name of the file with data to be fitted
+		file_tmplt = "JDSU_DFB_T_20_I_50_V_" + Vvals[i-1] + dottxt; 
 
 		vecut::read_into_matrix(file_tmplt, the_data, n_rows, n_cols, true); // read the data from the file into memory
 

@@ -81,21 +81,22 @@ if __name__ == '__main__':
     
     print(pwd)
     
-    filename = "Diode_non_lin_fit.txt"
-    non_lin_fit_plot(filename)
+    #filename = "Diode_non_lin_fit.txt"
+    #non_lin_fit_plot(filename)
     
     #filename = "Ring_Down_non_lin_fit.txt"
     #non_lin_fit_plot(filename)
     
     #filename = "Gauss_non_lin_fit.txt"
     #filename = 'Diode_non_lin_fit.txt'
+
+    os.chdir('C:/users/robertsheehan/Research/Laser_Physics/Linewidth/Data/ESA_Spectra_Versus_VOA_Bias/')
     
-    #filename = 'Lorentzian_non_lin_fit.txt'    
-    #non_lin_fit_plot(filename)
+    filename = 'Lorentzian_non_lin_fit.txt'    
+    non_lin_fit_plot(filename)
     
     #filename = 'Gaussian_non_lin_fit.txt'
     #non_lin_fit_plot(filename)
 
-    #filename = 'Voigt_non_lin_fit.txt'
-    #non_lin_fit_plot(filename)
-    
+    filename = 'Voigt_non_lin_fit.txt'
+    non_lin_fit_plot(filename)    

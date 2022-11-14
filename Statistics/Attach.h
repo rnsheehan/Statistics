@@ -21,6 +21,7 @@
 
 #include <cmath>
 #include <vector>
+#include <list>
 #include <complex>
 #include <iterator>
 

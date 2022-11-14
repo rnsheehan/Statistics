@@ -1,7 +1,0 @@
-Program Exit Explanation
-
-Error occurred: Wed Mar 23 10:17:00 2022
-
-Error: void lin_alg::gaussj()
-Singular Matrix-2
-

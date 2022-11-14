@@ -96,7 +96,7 @@ int main()
 
 	//testing::diode_voltage_data_fit_test(); 
 
-	testing::resistive_diode_voltage_data_fit();
+	//testing::resistive_diode_voltage_data_fit();
 
 	//testing::Lorentzian_data_fit();
 	
@@ -108,7 +108,7 @@ int main()
 	
 	//testing::Voigt_data_fit_test();
 
-	//testing::Lorentz_Voigt_Fit_Analysis(); 
+	testing::Lorentz_Voigt_Fit_Analysis(); 
 
 	//testing::Ring_Down_data_fit(); 
 
