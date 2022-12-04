@@ -673,6 +673,53 @@ void fit::goodness_of_fit(std::vector<double>& x, std::vector<double>& y, std::v
 	}
 }
 
+void fit::compute_gof(int& ndata, int& ma, double* chisq, double* nu, double* red_chisq, double* gof, std::vector<int>& ia, bool loud)
+{
+	// Compute the gof statistic based on a computed value of chi^{2} for the set of fitted parameters a
+	// ndata is no. data points used in fit
+	// ma is no. fit parameters
+	// chisq is computed chi^{2} value for the fit
+	// nu is the no. of degrees of freedom in the fit nu = ndata - no. fitted parameters
+	// red_chisq is reduced chisq value red_chisq = chisq / nu
+	// gof is the goodness of fit probability
+	// ia is the array of integers that told the fit function whether or not to fit a particular parameter
+	// R. Sheehan 2 - 12 - 2022
+
+	try {
+		bool c1 = ndata > 0 ? true : false; 
+		bool c2 = ma > 0 ? true : false; 
+		bool c3 = *chisq > 0 ? true : false; 
+		bool c4 = ia.size() > 0 ? true : false; 
+		bool c10 = c1 && c2 && c3 && c4; 
+
+		if (c10) {
+			int count = 0;
+			for (int i = 0; i < ma; i++) if (ia[i]) count++; // count the no. of fitted parameters
+			*nu = ndata - count; // nu must be computed on basis of number of fitted parameters
+			*red_chisq = (*chisq) / (*nu); 
+			*gof = probability::gammq(0.5 * (*nu), 0.5 * (*chisq) ); // goodness of fit
+
+			if (loud) {				
+				std::cout << "\nThe chi-sq value for the fit is " << *chisq << "\n";
+				std::cout << "nu for the fit is " << *nu << "\n";
+				std::cout << "chi-sq / nu = " << *red_chisq << "\n";
+				std::cout << "goodness of fit = " << *gof << "\n\n";
+			}
+		}
+		else {
+			std::string reason = "Error: void fit::compute_gof(int& ndata, int& ma, double* chisq, double* nu, double* red_chisq, double* gof, std::vector<int>& ia, std::vector<double>& a)\n"; 
+			if (!c1) reason += "No. data points is not correct ndata = " + template_funcs::toString(ndata) + "\n";
+			if (!c2) reason += "No. fit parameters is not correct ma = " + template_funcs::toString(ma) + "\n";
+			if (!c3) reason += "chisq value is not correct\n";
+			if (!c4) reason += "ia does not have correct size ia.size() = " + template_funcs::toString(ia.size()) + "\n";
+			throw std::invalid_argument(reason);
+		}
+	}
+	catch (std::invalid_argument& e) {
+		std::cerr << e.what();
+	}
+}
+
 void fit::residuals(std::vector<double>& x, std::vector<double>& y, std::vector<double>& sig, int& ndata, std::vector<double>& a, int& ma, void(*funcs)(double, std::vector<double>&, double*, std::vector<double>&, int&), std::vector<std::vector<double>>& data)
 {
 	// Compute the residuals of a fitted function

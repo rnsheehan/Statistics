@@ -2699,12 +2699,15 @@ void testing::Lorentz_Voigt_Fit_Analysis()
 
 	int n_files = 11, npts, n_rows, npars, n_cols, indx_max = 0, ITMAX = 50;
 	double spread = 0.15, spctr_max = -500.0, f_max = 0, scale_fac = 1.0e+6, f_start = 60.0, f_end = 100.0, TOL = 1e-3, chisq = 0.0;
+	double v_chisq = 0.0, v_nu = 0.0, v_red_chisq = 0.0, v_gof = 0.0; 
+	double l_chisq = 0.0, l_nu = 0.0, l_red_chisq = 0.0, l_gof = 0.0; 
 
 	std::string Vvals[11] = {"000", "100", "200", "300", "325", "350", "360", "365", "370", "375", "400"};
 	double Vvolts[11] = { 0.0, 1.0, 2.0, 3.0, 3.25, 3.5, 3.6, 3.65, 3.7, 3.75, 4.0 }; 
 	
 	std::string file_tmplt; 
 	std::string file_out; 
+	std::string file_out_gof;
 	std::string file_results; 
 	
 	// Declare the necessary arrays
@@ -2715,9 +2718,15 @@ void testing::Lorentz_Voigt_Fit_Analysis()
 
 	file_out = "Fitted_Parameter_Values.txt"; 
 	//std::ofstream write(file_out, std::ios_base::out , std::ios_base::app);
-	std::fstream write(file_out, std::ios_base::out|std::ios_base::app);
+	std::fstream write(file_out, std::ios_base::out|std::ios_base::trunc);
 	if (write.is_open()) {
-		write << "Filename , Actual Peak / uW , Voigt h / uW , Voigt f_{0} / MHz , Voigt gamma / MHz , Voigt sigma / MHz , Voigt delta / MHz , Voigt peak / uW , Lorentz h / uW , Lorentz f_{0} / MHz , Lorentz gamma / MHz , Lorentz peak / uW\n"; 
+		write << "Filename , Actual Peak / nW , Voigt h / nW , Voigt f_{0} / MHz , Voigt gamma / MHz , Voigt sigma / MHz , Voigt delta / MHz , Voigt peak / nW , Lorentz h / nW , Lorentz f_{0} / MHz , Lorentz gamma / MHz , Lorentz peak / nW\n"; 
+	}
+
+	file_out_gof = "Fitted_Parameter_GOF.txt"; 
+	std::fstream write_gof(file_out_gof, std::ios_base::out | std::ios_base::trunc);
+	if (write_gof.is_open()) {
+		write_gof << "Filename, Voigt chi^{2}, Voigt nu, Voigt chi^{2}/nu, Voigt gof, Lorentz chi^{2}, Lorentz nu, Lorentz chi^{2}/nu, Lorentz gof, chi^{2} ratio\n";
 	}
 
 	for (int i = 1; i <=11; i++) {
@@ -2773,8 +2782,10 @@ void testing::Lorentz_Voigt_Fit_Analysis()
 		a_voigt[3] = 2.0; // initial guesses for the parameters
 
 		// run the fitting algorithm
-		chisq = 0.0; // reset value to 0.0 between calls
-		fit::non_lin_fit(xdata, ydata, sigdata, npts, a_voigt, ia, npars, covar, alpha, &chisq, Voigt, ITMAX, TOL, true);
+		v_chisq = 0.0; v_nu = 0.0; v_red_chisq = 0.0; v_gof = 0.0; // reset values to 0.0 between calls
+		fit::non_lin_fit(xdata, ydata, sigdata, npts, a_voigt, ia, npars, covar, alpha, &v_chisq, Voigt, ITMAX, TOL, true);
+
+		fit::compute_gof(npts, npars, &v_chisq, &v_nu, &v_red_chisq, &v_gof, ia); 
 
 		// compute the HWHM using bisection
 		double xlow = a_voigt[1], xhigh = f_end, HWHM = 0.0, voigt_peak;
@@ -2784,7 +2795,7 @@ void testing::Lorentz_Voigt_Fit_Analysis()
 		Voigt_HWHM(xlow, xhigh, a_voigt, npars, &HWHM);
 
 		std::cout << "Voigt Fit\nFitted centre freq: " << a_voigt[1] << " MHz\n";
-		std::cout << "Computed peak val: " << voigt_peak << " uW\n";
+		std::cout << "Computed peak val: " << voigt_peak << " nW\n";
 		std::cout << "Lorentz HWHM: " << a_voigt[2] << " MHz\n";
 		std::cout << "Gauss HWHM: " << sqrt(2.0 * log(2.0)) * a_voigt[3] << " MHz\n";
 		std::cout << "Voigt HWHM: " << HWHM << " MHz\n\n";
@@ -2813,13 +2824,15 @@ void testing::Lorentz_Voigt_Fit_Analysis()
 		a_lorentz[2] = 1.5; // initial guesses for the parameters
 
 		// run the fitting algorithm
-		chisq = 0.0; // reset value to 0.0 between calls
-		fit::non_lin_fit(xdata, ydata, sigdata, npts, a_lorentz, ia, npars, covar, alpha, &chisq, Lorentzian, ITMAX, TOL, true);
+		l_chisq = 0.0; l_nu = 0.0; l_red_chisq = 0.0; l_gof = 0.0; // reset values to 0.0 between calls
+		fit::non_lin_fit(xdata, ydata, sigdata, npts, a_lorentz, ia, npars, covar, alpha, &l_chisq, Lorentzian, ITMAX, TOL, true);
+
+		fit::compute_gof(npts, npars, &l_chisq, &l_nu, &l_red_chisq, &l_gof, ia);
 
 		double lorentz_peak = a_lorentz[0] / a_lorentz[2]; 
 
 		std::cout << "Lorentz Fit\nFitted centre freq: " << a_lorentz[1] << " MHz\n";
-		std::cout << "Computed peak val: " << lorentz_peak << "uW\n";
+		std::cout << "Computed peak val: " << lorentz_peak << "nW\n";
 		std::cout << "Computed HWHM: " << a_lorentz[2] << " MHz\n\n";
 
 		// compute the residuals for the fit 
@@ -2844,6 +2857,13 @@ void testing::Lorentz_Voigt_Fit_Analysis()
 			write << std::setprecision(10) << lorentz_peak << "\n";
 		}
 
+		// Output fit gof results
+		// Output data in the form Filename, Voigt chi^{2}, Voigt nu, Voigt chi^{2}/nu, Voigt gof, Lorentz chi^{2}, Lorentz nu, Lorentz chi^{2}/nu, Lorentz gof, chi-sq ratio
+		if (write_gof.is_open()) {
+			write_gof << file_tmplt << " , "; 
+			write_gof << std::setprecision(5) << v_chisq << " , " << v_nu << " , " << v_red_chisq << " , " << v_gof << " , " <<l_chisq << " , " << l_nu << " , " << l_red_chisq << " , " << l_gof << " , " << v_chisq / l_chisq << "\n";
+		}
+
 		// Output fit function results
 		// Data will be output in the form
 		// row 1: freq fit data, row 2: LLM spctrl data, row 3: Voigt f vals, row 4: Voigt resids, row 5: Lorentz f vals, row 6: Lorentz f resids
@@ -2851,6 +2871,8 @@ void testing::Lorentz_Voigt_Fit_Analysis()
 		file_results = file_tmplt + "_fit_results.txt";
 		std::ofstream write_res(file_results, std::ios_base::out, std::ios_base::trunc);
 		if (write_res.is_open()) {
+
+			// row 1: freq fit data
 			for (int i = 0; i < npts; i++) {
 				if (i == npts - 1) {
 					write_res << std::setprecision(10) << voigt_data[0][i] << "\n";
@@ -2860,6 +2882,7 @@ void testing::Lorentz_Voigt_Fit_Analysis()
 				}
 			}
 			
+			// row 2: LLM spctrl data
 			for (int i = 0; i < npts; i++) {
 				if (i == npts - 1) {
 					write_res << std::setprecision(10) << voigt_data[1][i] << "\n";
@@ -2869,6 +2892,7 @@ void testing::Lorentz_Voigt_Fit_Analysis()
 				}
 			}
 			
+			// row 3: Voigt f vals
 			for (int i = 0; i < npts; i++) {
 				if (i == npts - 1) {
 					write_res << std::setprecision(10) << voigt_data[3][i] << "\n";
@@ -2878,6 +2902,7 @@ void testing::Lorentz_Voigt_Fit_Analysis()
 				}
 			}
 			
+			// row 4: Voigt resids
 			for (int i = 0; i < npts; i++) {
 				if (i == npts - 1) {
 					write_res << std::setprecision(10) << voigt_data[4][i] << "\n";
@@ -2887,6 +2912,7 @@ void testing::Lorentz_Voigt_Fit_Analysis()
 				}
 			}
 			
+			// row 5: Lorentz f vals
 			for (int i = 0; i < npts; i++) {
 				if (i == npts - 1) {
 					write_res << std::setprecision(10) << lor_data[3][i] << "\n";
@@ -2896,6 +2922,7 @@ void testing::Lorentz_Voigt_Fit_Analysis()
 				}
 			}
 			
+			// row 6: Lorentz f resids
 			for (int i = 0; i < npts; i++) {
 				if (i == npts - 1) {
 					write_res << std::setprecision(10) << lor_data[4][i] << "\n";
@@ -2913,7 +2940,7 @@ void testing::Lorentz_Voigt_Fit_Analysis()
 		the_data.clear(); xdata.clear(); ydata.clear(); sigdata.clear(); voigt_data.clear(); lor_data.clear(); 
 	}
 
-	write.close(); 
+	write.close(); write_gof.close();
 }
 
 void testing::Ring_Down(double x, std::vector<double>& a, double* y, std::vector<double>& dyda, int& na)

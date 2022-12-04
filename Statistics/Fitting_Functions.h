@@ -26,6 +26,8 @@ namespace fit {
 	// Function for evaluating goodness-of-fit statistics
 	void goodness_of_fit(std::vector<double>& x, std::vector<double>& y, std::vector<double>& sig, int& ndata, std::vector<double>& a, int& ma, void(*funcs)(double, std::vector<double>&, double*, std::vector<double>&, int&), double* chisq, double *nu, double* rsqr, double *gof);
 
+	void compute_gof(int& ndata, int& ma, double* chisq, double *nu, double *red_chisq, double *gof, std::vector<int>& ia, bool loud = false);
+
 	// Function for computing the residual of a fit
 	void residuals(std::vector<double>& x, std::vector<double>& y, std::vector<double>& sig, int& ndata, std::vector<double>& a, int& ma, void(*funcs)(double, std::vector<double>&, double*, std::vector<double>&, int&), std::vector<std::vector<double>> &data);
 
