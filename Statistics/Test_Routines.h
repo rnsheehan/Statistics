@@ -55,6 +55,10 @@ namespace testing{
 
 	void fgauss(double x, std::vector<double> &a, double *y, std::vector<double> &dyda, int &na); 
 
+	double convert_dBm_to_mW(double dBm_val); 
+
+	double convert_mW_to_dBm(double mW_val); 
+
 	void non_lin_fit_test(); 
 
 	void rng_test(); 

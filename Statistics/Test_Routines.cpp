@@ -1179,6 +1179,23 @@ void testing::fgauss(double x, std::vector<double> &a, double *y, std::vector<do
 	}
 }
 
+double testing::convert_dBm_to_mW(double dBm_val)
+{
+	// convert a dBm power reading to a mW power reading
+	return pow(10.0, (dBm_val / 10.0));
+}
+
+double testing::convert_mW_to_dBm(double mW_val)
+{
+	// convert a mW power reading to dBm power reading
+	if (mW_val > 1.0e-10) {
+		return 10.0 * log10(mW_val);
+	}
+	else {
+		return -100.0;
+	}
+}
+
 void testing::non_lin_fit_test()
 {
 	// routine which determines if the Levenberg-Margquardt method has been implemented correctly
@@ -2467,14 +2484,18 @@ void testing::Voigt_data_fit_test()
 	//std::string filename = "Smpl_LLM_11.txt";
 	//std::string filename = "LLM_Spctrm_I_60.txt";
 
-	std::string dir_name = "C:\\users\\robertsheehan\\Research\\Laser_Physics\\Linewidth\\Data\\ESA_Spectra_Versus_VOA_Bias\\"; 
+	//std::string dir_name = "C:\\users\\robertsheehan\\Research\\Laser_Physics\\Linewidth\\Data\\ESA_Spectra_Versus_VOA_Bias\\"; 
+	std::string dir_name = "C:\\users\\robertsheehan\\Research\\Laser_Physics\\Linewidth\\Data\\NKT_LCR_DSHI\\"; 
 	useful_funcs::set_directory(dir_name);
 	useful_funcs::get_directory(); 
 
-	std::string filename = "JDSU_DFB_T_20_I_50_V_300.txt"; 
+	//std::string filename = "JDSU_DFB_T_20_I_50_V_300.txt"; 
+
+	int fbeat = 400; // beat frequency MHz
+	std::string filename = "NKT_I_100_Vb_30_RBW_05_fb_" + template_funcs::toString(fbeat) + dottxt; 
 	
 	int npts, n_rows, npars = 4, n_cols, indx_max = 0;
-	double spread = 0.15, spctr_max = -500.0, f_max = 0, f_start, f_end, scale_fac;
+	double spread = 0.05, spctr_max = -500.0, f_max = 0, scale_fac;
 
 	time_t rawtime;
 	time(&rawtime);
@@ -2496,12 +2517,11 @@ void testing::Voigt_data_fit_test()
 	//xdata = vecut::get_col(the_data, 0);
 	//ydata = vecut::get_col(the_data, 1);
 
-	scale_fac = 1.0e+6;  f_start = 45.0; f_end = 115.0;
+	scale_fac = 1.0e+6; // why is this scale factor being deployed? 
+	//scale_fac = 1.0e+3; // why is this scale factor being deployed? To convert power from dBm to nW
 	for (int i = 0; i < n_rows; i++) {
-		if (the_data[i][0] > f_start && the_data[i][0] < f_end) {
-			xdata.push_back(the_data[i][0]);
-			ydata.push_back(scale_fac * pow(10.0, the_data[i][1] / 10.0)); // convert the spectral data from dBm to mW scale and rescale it
-		}
+		xdata.push_back(the_data[i][0]);
+		ydata.push_back(scale_fac * convert_dBm_to_mW(the_data[i][1]) ); // convert the spectral data from dBm to mW scale and rescale it to nW
 	}
 
 	npts = static_cast<int>(xdata.size());
@@ -2520,8 +2540,9 @@ void testing::Voigt_data_fit_test()
 		}
 	}
 
-	std::cout << "\nMax value in data set: " << spctr_max << "\n";
-	std::cout << "Corresponding Frequency: " << xdata[indx_max] << "\n\n";
+	f_max = xdata[indx_max]; 
+	std::cout << "\nMax value in data set: " << spctr_max << "nW\n";
+	std::cout << "Corresponding Frequency: " << f_max << " MHz\n\n";
 
 	// Perform the best it search for the data set
 	int ITMAX = 50;
@@ -2537,25 +2558,25 @@ void testing::Voigt_data_fit_test()
 	std::vector<double> a_guess(npars, 0.0);
 	std::vector<int> ia(npars, 1); // tell the algorithm that you want to locate all parameters 
 
-	ia[1] = 0; ia[3] = 1;
-	a_guess[0] = 10*spctr_max;
-	a_guess[1] = 80;
-	a_guess[2] = 1.5; // initial guesses for the parameters
-	a_guess[3] = 2.0; // initial guesses for the parameters
+	// initial guesses for the parameters	switch to tell code whether or not they're to be fitted
+	a_guess[0] = 10*spctr_max;	ia[0] = 1;
+	a_guess[1] = f_max;			ia[1] = 0;
+	a_guess[2] = 3e-3;			ia[2] = 1; 
+	a_guess[3] = 3e-3;			ia[3] = 1; 
 
 	// run the fitting algorithm
 	fit::non_lin_fit(xdata, ydata, sigdata, npts, a_guess, ia, npars, covar, alpha, &chisq, Voigt, ITMAX, TOL, true);
 
 	// compute the HWHM using bisection
-	double xlow = a_guess[1], xhigh = f_end, HWHM = 0.0;
+	double xlow = a_guess[1], xhigh = xdata[npts-1], HWHM = 0.0;
 	
 	Voigt_HWHM(xlow, xhigh, a_guess, npars, &HWHM);
 
 	std::cout << "Fitted centre freq: " << a_guess[1] << " MHz\n";
-	std::cout << "Computed peak val: " << a_guess[0] * exp( template_funcs::DSQR(a_guess[2]/ a_guess[3]) ) * probability::erffc(a_guess[2] / a_guess[3]) << " uW\n";
-	std::cout << "Lorentz HWHM: " << a_guess[2] << " MHz\n";
-	std::cout << "Gauss HWHM: " << sqrt( 2.0*log(2.0) ) * a_guess[3] << " MHz\n";
-	std::cout << "Voigt HWHM: " << HWHM << " MHz\n\n";	
+	std::cout << "Computed peak val: " << a_guess[0] * exp( template_funcs::DSQR(a_guess[2]/ a_guess[3]) ) * probability::erffc(a_guess[2] / a_guess[3]) << " nW\n";
+	std::cout << "Lorentz HWHM: " << a_guess[2] << " MHz = "<<1000.0* a_guess[2] <<" kHz\n";
+	std::cout << "Gauss HWHM: " << sqrt( 2.0*log(2.0) ) * a_guess[3] << " MHz = " << 1000.0 * sqrt(2.0 * log(2.0)) * a_guess[2] << " kHz\n";
+	std::cout << "Voigt HWHM: " << HWHM << " MHz = " << 1000.0 * HWHM << " kHz\n\n";
 
 	// compute the residuals for the fit
 	std::vector<std::vector<double>> data;
