@@ -2491,7 +2491,7 @@ void testing::Voigt_data_fit_test()
 
 	//std::string filename = "JDSU_DFB_T_20_I_50_V_300.txt"; 
 
-	int fbeat = 400; // beat frequency MHz
+	int fbeat = 2000; // beat frequency MHz
 	std::string filename = "NKT_I_100_Vb_30_RBW_05_fb_" + template_funcs::toString(fbeat) + dottxt; 
 	
 	int npts, n_rows, npars = 4, n_cols, indx_max = 0;
@@ -2520,7 +2520,7 @@ void testing::Voigt_data_fit_test()
 	scale_fac = 1.0e+6; // why is this scale factor being deployed? 
 	//scale_fac = 1.0e+3; // why is this scale factor being deployed? To convert power from dBm to nW
 	for (int i = 0; i < n_rows; i++) {
-		xdata.push_back(the_data[i][0]);
+		xdata.push_back(1000*(the_data[i][0] - (double)(fbeat))); // rescale frq to zero in units of kHz
 		ydata.push_back(scale_fac * convert_dBm_to_mW(the_data[i][1]) ); // convert the spectral data from dBm to mW scale and rescale it to nW
 	}
 
@@ -2561,8 +2561,8 @@ void testing::Voigt_data_fit_test()
 	// initial guesses for the parameters	switch to tell code whether or not they're to be fitted
 	a_guess[0] = 10*spctr_max;	ia[0] = 1;
 	a_guess[1] = f_max;			ia[1] = 0;
-	a_guess[2] = 3e-3;			ia[2] = 1; 
-	a_guess[3] = 3e-3;			ia[3] = 1; 
+	a_guess[2] = 3;				ia[2] = 1; 
+	a_guess[3] = 3;				ia[3] = 1; 
 
 	// run the fitting algorithm
 	fit::non_lin_fit(xdata, ydata, sigdata, npts, a_guess, ia, npars, covar, alpha, &chisq, Voigt, ITMAX, TOL, true);
@@ -2616,7 +2616,7 @@ void testing::Voigt_HWHM(double xlow, double xhigh, std::vector<double>& a, int&
 		bool c1 = xhigh > xlow ? true : false; 
 		bool c2 = xlow > 0 ? true : false; 
 		bool c3 = a[3] > 0 ? true : false; 
-		bool c10 = c1 && c2;
+		bool c10 = c1 && c3;
 
 		if (c10) {
 			int count = 0, MAXIT = 50; // max. no iterations of bisection method
