@@ -93,8 +93,8 @@ if __name__ == '__main__':
     #os.chdir('C:/users/robertsheehan/Research/Laser_Physics/Linewidth/Data/ESA_Spectra_Versus_VOA_Bias/')
     os.chdir('C:/users/robertsheehan/Research/Laser_Physics/Linewidth/Data/NKT_LCR_DSHI/')
     
-    #filename = 'Lorentzian_non_lin_fit.txt'    
-    #non_lin_fit_plot(filename)
+    filename = 'Lorentzian_non_lin_fit.txt'    
+    non_lin_fit_plot(filename)
     
     #filename = 'Gaussian_non_lin_fit.txt'
     #non_lin_fit_plot(filename)

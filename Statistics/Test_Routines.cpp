@@ -1996,11 +1996,22 @@ void testing::Lorentzian_data_fit_test()
 	//std::string filename = "Smpl_LLM_7.txt";
 	//std::string filename = "LLM_Spctrm_I_65.txt";
 
-	std::string dir_name = "C:\\users\\robertsheehan\\Research\\Laser_Physics\\Linewidth\\Data\\ESA_Spectra_Versus_VOA_Bias\\";
+	/*std::string dir_name = "C:\\users\\robertsheehan\\Research\\Laser_Physics\\Linewidth\\Data\\ESA_Spectra_Versus_VOA_Bias\\";
 	useful_funcs::set_directory(dir_name);
 	useful_funcs::get_directory();
 
-	std::string filename = "JDSU_DFB_T_20_I_50_V_300.txt";
+	std::string filename = "JDSU_DFB_T_20_I_50_V_300.txt";*/
+
+	std::string dir_name = "C:\\users\\robertsheehan\\Research\\Laser_Physics\\Linewidth\\Data\\NKT_LCR_DSHI\\";
+	useful_funcs::set_directory(dir_name);
+	useful_funcs::get_directory();
+
+	bool ReScaleFrq = true;
+	std::string unitsFrq = ReScaleFrq ? " kHz" : " MHz";
+	std::string unitsPow = " pW";
+
+	int fbeat = 320; // beat frequency MHz
+	std::string filename = "NKT_I_100_Vb_30_RBW_05_fb_" + template_funcs::toString(fbeat) + dottxt;
 
 	int npts, n_rows, npars = 3, n_cols, indx_max = 0;
 	long idum = (-1011);
@@ -2022,21 +2033,17 @@ void testing::Lorentzian_data_fit_test()
 	//xdata = vecut::get_col(the_data, 0);
 	//ydata = vecut::get_col(the_data, 1);
 
-	scale_fac = 1.0e+6;  f_start = 45.0; f_end = 115.0;
+	scale_fac = 1.0e+6; // why is this scale factor being deployed? To convert power from dBm to pW
+	//scale_fac = 1.0e+3; // why is this scale factor being deployed? To convert power from dBm to nW
 	for (int i = 0; i < n_rows; i++) {
-		if (the_data[i][0] > f_start && the_data[i][0] < f_end) {
-			xdata.push_back(the_data[i][0]);
-			ydata.push_back(scale_fac * pow(10.0, the_data[i][1] / 10.0)); // convert the spectral data from dBm to mW scale and rescale it
+		if (ReScaleFrq) {
+			xdata.push_back(1000 * (the_data[i][0] - (double)(fbeat))); // rescale frq to zero in units of kHz
 		}
+		else {
+			xdata.push_back(the_data[i][0]); // rescale frq to zero in units of kHz			
+		}
+		ydata.push_back(scale_fac * convert_dBm_to_mW(the_data[i][1])); // convert the spectral data from dBm to mW scale
 	}
-
-	//scale_fac = 1.0e+3;  f_start = 77.0 * scale_fac; f_end = 83.0 * scale_fac;
-	//for (int i = 0; i < n_rows; i++) {
-	//	if (the_data[i][0] > f_start && the_data[i][0] < f_end) {
-	//		xdata.push_back(the_data[i][0]/scale_fac); 
-	//		ydata.push_back(scale_fac * pow(10.0, the_data[i][1] / 10.0) ); // convert the spectral data from dBm to mW scale and rescale it
-	//	}
-	//}
 
 	npts = static_cast<int>( xdata.size() ); 
 
@@ -2070,8 +2077,10 @@ void testing::Lorentzian_data_fit_test()
 	// Max value should be close to x_centre, assuming data is distributed equally around x_centre
 	// This doesn't work when x_centre is outside the range [xlow, xhigh], but otherwise works quite well
 	
-	std::cout << "\nCorresponding Frequency: " << xdata[indx_max] << " MHz\n";
-	std::cout << "Max value in data set: " << spctr_max << "\n\n";
+	f_max = xdata[indx_max]; // find location of peak value
+
+	std::cout << "\nMax value in data set: " << spctr_max << unitsPow << "\n";
+	std::cout << "Corresponding Frequency: " << f_max << unitsFrq << "\n\n";
 
 	// Perform the best it search for the data set
 	int ITMAX = 10;
@@ -2087,19 +2096,18 @@ void testing::Lorentzian_data_fit_test()
 	std::vector<double> a_guess(npars, 0.0);
 	std::vector<int> ia(npars, 1); // tell the algorithm that you want to locate all parameters 
 
-	ia[1] = 0; // search for params 0 and 2, fix param 1 value
-	//a_guess[0] = xdata[indx_max]; 
-	a_guess[0] = 10*spctr_max;
-	a_guess[1] = 80;
-	a_guess[2] = 3; // initial guesses for the parameters
-	//a_guess[2] = 1.5; // initial guesses for the parameters
+	// initial guesses for the parameters	switch to tell code whether or not they're to be fitted
+	//a_guess[0] = ReScaleFrq ? spctr_max : 10 * spctr_max;			ia[0] = ReScaleFrq ? 0 : 1;
+	a_guess[0] = 10 * spctr_max;			ia[0] = 1;
+	a_guess[1] = f_max;				ia[1] = 0;
+	a_guess[2] = 3.32;				ia[2] = 1;
 
 	// run the fitting algorithm
 	fit::non_lin_fit(xdata, ydata, sigdata, npts, a_guess, ia, npars, covar, alpha, &chisq, Lorentzian, ITMAX, TOL, true);
 
-	std::cout << "Fitted centre freq: " << a_guess[1] << " MHz\n"; 
-	std::cout << "Computed peak val: " << a_guess[0] / a_guess[2] << "uW\n"; 
-	std::cout << "Computed HWHM: " << a_guess[2] << " MHz\n\n"; 
+	std::cout << "Fitted centre freq: " << a_guess[1] << unitsFrq << "\n";
+	std::cout << "Computed peak val: " << a_guess[0] / a_guess[2] << unitsPow << "\n";
+	std::cout << "Lorentz HWHM: " << a_guess[2] << unitsFrq << "\n";
 
 	// compute the residuals for the fit
 	std::vector<std::vector<double>> data;
@@ -2495,7 +2503,7 @@ void testing::Voigt_data_fit_test()
 	std::string unitsFrq = ReScaleFrq ? " kHz" : " MHz";
 	std::string unitsPow = " pW";
 
-	int fbeat = 1280; // beat frequency MHz
+	int fbeat = 320; // beat frequency MHz
 	std::string filename = "NKT_I_100_Vb_30_RBW_05_fb_" + template_funcs::toString(fbeat) + dottxt; 
 	
 	int npts, n_rows, npars = 4, n_cols, indx_max = 0;
@@ -2724,7 +2732,8 @@ void testing::Lorentz_Voigt_Fit_Analysis()
 	// R. Sheehan 13 - 12 - 2021
 
 	//std::string data_home = "c:\\users\\robertsheehan\\Research\\Laser_Physics\\Linewidth\\Data\\Sample_Data"; 
-	std::string data_home = "C:\\users\\robertsheehan\\Research\\Laser_Physics\\Linewidth\\Data\\ESA_Spectra_Versus_VOA_Bias\\";
+	//std::string data_home = "C:\\users\\robertsheehan\\Research\\Laser_Physics\\Linewidth\\Data\\ESA_Spectra_Versus_VOA_Bias\\";
+	std::string data_home = "C:\\users\\robertsheehan\\Research\\Laser_Physics\\Linewidth\\Data\\NKT_LCR_DSHI\\";
 	
 	useful_funcs::set_directory(data_home); 
 	useful_funcs::get_directory(); 
@@ -2734,8 +2743,17 @@ void testing::Lorentz_Voigt_Fit_Analysis()
 	double v_chisq = 0.0, v_nu = 0.0, v_red_chisq = 0.0, v_gof = 0.0; 
 	double l_chisq = 0.0, l_nu = 0.0, l_red_chisq = 0.0, l_gof = 0.0; 
 
-	std::string Vvals[11] = {"000", "100", "200", "300", "325", "350", "360", "365", "370", "375", "400"};
-	double Vvolts[11] = { 0.0, 1.0, 2.0, 3.0, 3.25, 3.5, 3.6, 3.65, 3.7, 3.75, 4.0 }; 
+	//std::string Vvals[11] = {"000", "100", "200", "300", "325", "350", "360", "365", "370", "375", "400"};
+	//double Vvolts[11] = { 0.0, 1.0, 2.0, 3.0, 3.25, 3.5, 3.6, 3.65, 3.7, 3.75, 4.0 }; 
+
+	std::string Vvals[37]; 
+	double Vvolts[37]; 
+
+	double dfb = 80, f0 = 80; 
+	for (int i = 0; i < 37; i++) {
+		Vvolts[i] = f0; Vvals[i] = template_funcs::toString(f0); 
+		f0 += dfb; 
+	}
 	
 	std::string file_tmplt; 
 	std::string file_out; 
@@ -2761,41 +2779,51 @@ void testing::Lorentz_Voigt_Fit_Analysis()
 		write_gof << "Filename, Voigt chi^{2}, Voigt nu, Voigt chi^{2}/nu, Voigt gof, Lorentz chi^{2}, Lorentz nu, Lorentz chi^{2}/nu, Lorentz gof, chi^{2} ratio\n";
 	}
 
-	for (int i = 1; i <=11; i++) {
+	bool ReScaleFrq = true;
+	std::string unitsFrq = ReScaleFrq ? " kHz" : " MHz";
+	std::string unitsPow = " pW";
+
+	for (int i = 1; i <=37; i++) {
 		//file_tmplt = "Smpl_LLM_" + template_funcs::toString(i) + dottxt; // name of the file with data to be fitted
 		//file_tmplt = "LLM_Spctrm_I_" + template_funcs::toString(i) + dottxt; // name of the file with data to be fitted
-		file_tmplt = "JDSU_DFB_T_20_I_50_V_" + Vvals[i-1] + dottxt; 
+		//file_tmplt = "JDSU_DFB_T_20_I_50_V_" + Vvals[i-1] + dottxt; 
+		file_tmplt = "NKT_I_100_Vb_30_RBW_05_fb_" + Vvals[i-1] + dottxt; 
 
 		vecut::read_into_matrix(file_tmplt, the_data, n_rows, n_cols, true); // read the data from the file into memory
 
 		// format the data from dBm scale to linear scale prior to fitting
-		for (int i = 0; i < n_rows; i++) {
-			if (the_data[i][0] > f_start && the_data[i][0] < f_end) {
-				xdata.push_back(the_data[i][0]);
-				ydata.push_back(scale_fac * pow(10.0, the_data[i][1] / 10.0)); // convert the spectral data from dBm to mW scale and rescale it
+		for (int j = 0; j < n_rows; j++) {
+			if (ReScaleFrq) {
+				xdata.push_back(1000 * (the_data[j][0] - Vvolts[i-1]) ); // rescale frq to zero in units of kHz
 			}
+			else {
+				xdata.push_back(the_data[j][0]); // rescale frq to zero in units of kHz			
+			}
+			ydata.push_back(scale_fac * convert_dBm_to_mW(the_data[j][1])); // convert the spectral data from dBm to mW scale
 		}
 
 		npts = static_cast<int>(xdata.size()); // number of data points in the fit
 
 		// locate the location of the maximum of the data set
 		indx_max = 0; spctr_max = -500.0, f_max = 0;
-		for (int i = 0; i < npts; i++) {
-			if (ydata[i] > spctr_max) {
-				spctr_max = ydata[i];
-				indx_max = i;
+		for (int j = 0; j < npts; j++) {
+			if (ydata[j] > spctr_max) {
+				spctr_max = ydata[j];
+				indx_max = j;
 			}
 
-			if (fabs(ydata[i]) > 0.0) {
-				sigdata.push_back(spread * ydata[i]);
+			if (fabs(ydata[j]) > 0.0) {
+				sigdata.push_back(spread * ydata[j]);
 			}
 			else {
 				sigdata.push_back(spread); // sigdata cannot have zero values
 			}
 		}
 
-		std::cout << "\nMax value in data set: " << spctr_max << "\n";
-		std::cout << "Corresponding Frequency: " << xdata[indx_max] << "\n\n";
+		f_max = xdata[indx_max]; // find location of peak value
+
+		std::cout << "\nMax value in data set: " << spctr_max << unitsPow << "\n";
+		std::cout << "Corresponding Frequency: " << f_max << unitsFrq << "\n\n";
 
 		// Voigt Fit
 		// Declare the necessary arrays
@@ -2807,30 +2835,30 @@ void testing::Lorentz_Voigt_Fit_Analysis()
 		std::vector<double> a_voigt(npars, 0.0);
 		std::vector<int> ia(npars, 1); // tell the algorithm that you want to locate all parameters 
 
-		ia[1] = 0;
-		a_voigt[0] = 10 * spctr_max; // must start looking for amplitude parameter 
-		a_voigt[1] = 80; // this is fixed
-		a_voigt[2] = 1.5; // initial guesses for the parameters
-		a_voigt[3] = 2.0; // initial guesses for the parameters
+		// initial guesses for the parameters	switch to tell code whether or not they're to be fitted
+		a_voigt[0] = ReScaleFrq ? spctr_max : 10 * spctr_max;			ia[0] = ReScaleFrq ? 0 : 1;
+		a_voigt[1] = f_max;				ia[1] = 0;
+		a_voigt[2] = 3.32;				ia[2] = 1;
+		a_voigt[3] = 3.32;				ia[3] = 1;
 
 		// run the fitting algorithm
 		v_chisq = 0.0; v_nu = 0.0; v_red_chisq = 0.0; v_gof = 0.0; // reset values to 0.0 between calls
 		fit::non_lin_fit(xdata, ydata, sigdata, npts, a_voigt, ia, npars, covar, alpha, &v_chisq, Voigt, ITMAX, TOL, true);
 
-		fit::compute_gof(npts, npars, &v_chisq, &v_nu, &v_red_chisq, &v_gof, ia); 
+		fit::compute_gof(npts, npars, &v_chisq, &v_nu, &v_red_chisq, &v_gof, ia);
 
 		// compute the HWHM using bisection
-		double xlow = a_voigt[1], xhigh = f_end, HWHM = 0.0, voigt_peak;
+		double xlow = a_voigt[1], xhigh = xdata[npts - 1], HWHM = 0.0, voigt_peak;
 
 		voigt_peak = a_voigt[0] * exp(template_funcs::DSQR(a_voigt[2] / a_voigt[3])) * probability::erffc(a_voigt[2] / a_voigt[3]); 
 
 		Voigt_HWHM(xlow, xhigh, a_voigt, npars, &HWHM);
 
-		std::cout << "Voigt Fit\nFitted centre freq: " << a_voigt[1] << " MHz\n";
-		std::cout << "Computed peak val: " << voigt_peak << " nW\n";
-		std::cout << "Lorentz HWHM: " << a_voigt[2] << " MHz\n";
-		std::cout << "Gauss HWHM: " << sqrt(2.0 * log(2.0)) * a_voigt[3] << " MHz\n";
-		std::cout << "Voigt HWHM: " << HWHM << " MHz\n\n";
+		std::cout << "Voigt Fit\nFitted centre freq: " << a_voigt[1] << unitsFrq << "\n";
+		std::cout << "Computed peak val: " << voigt_peak << unitsPow << "\n";
+		std::cout << "Lorentz HWHM: " << a_voigt[2] << unitsFrq << "\n";
+		std::cout << "Gauss HWHM: " << sqrt(2.0 * log(2.0)) * a_voigt[3] << unitsFrq << "\n";
+		std::cout << "Voigt HWHM: " << HWHM << unitsFrq << "\n\n";
 
 		// compute the residuals for the fit 
 		// Voigt values stored in voigt_data[3], residuals stored in voigt_data[4]
@@ -2852,7 +2880,7 @@ void testing::Lorentz_Voigt_Fit_Analysis()
 
 		ia[1] = 0;
 		a_lorentz[0] = 10 * spctr_max; // must start looking for amplitude parameter 
-		a_lorentz[1] = 80; // this is fixed
+		a_lorentz[1] = f_max; // this is fixed
 		a_lorentz[2] = 1.5; // initial guesses for the parameters
 
 		// run the fitting algorithm
@@ -2863,9 +2891,9 @@ void testing::Lorentz_Voigt_Fit_Analysis()
 
 		double lorentz_peak = a_lorentz[0] / a_lorentz[2]; 
 
-		std::cout << "Lorentz Fit\nFitted centre freq: " << a_lorentz[1] << " MHz\n";
-		std::cout << "Computed peak val: " << lorentz_peak << "nW\n";
-		std::cout << "Computed HWHM: " << a_lorentz[2] << " MHz\n\n";
+		std::cout << "Lorentz Fit\nFitted centre freq: " << a_lorentz[1] << unitsFrq << "\n";
+		std::cout << "Computed peak val: " << lorentz_peak << unitsPow << "\n";
+		std::cout << "Computed HWHM: " << a_lorentz[2] << unitsFrq << "\n";
 
 		// compute the residuals for the fit 
 		// Voigt values stored in data[3], residuals stored in data[4]
