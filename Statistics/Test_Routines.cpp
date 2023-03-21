@@ -2503,7 +2503,7 @@ void testing::Voigt_data_fit_test()
 	std::string unitsFrq = ReScaleFrq ? " kHz" : " MHz";
 	std::string unitsPow = " pW";
 
-	int fbeat = 320; // beat frequency MHz
+	int fbeat = 400; // beat frequency MHz
 	std::string filename = "NKT_I_100_Vb_30_RBW_05_fb_" + template_funcs::toString(fbeat) + dottxt; 
 	
 	int npts, n_rows, npars = 4, n_cols, indx_max = 0;
