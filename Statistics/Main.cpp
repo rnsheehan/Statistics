@@ -80,7 +80,7 @@ int main()
 
 	//testing::kendall_test_2();
 
-	//testing::lin_fit_test(); 
+	testing::lin_fit_test(); 
 
 	//testing::gaussj_test(); 
 
@@ -106,7 +106,7 @@ int main()
 
 	//testing::Voigt_data_fit();
 	
-	testing::Voigt_data_fit_test();
+	//testing::Voigt_data_fit_test();
 
 	//testing::Lorentz_Voigt_Fit_Analysis(); 
 
