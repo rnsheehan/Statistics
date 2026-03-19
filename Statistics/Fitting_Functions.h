@@ -6,7 +6,7 @@
 
 namespace fit {
 	// Perform linear for data with errors in y measurements only
-	void lin_fit(std::vector<double> &x, std::vector<double> &y, int &ndata, std::vector<double> &sig, int &mwt, double *a, double *b, double *siga, double *sigb, double *chi2, double *q); 
+	void lin_fit(std::vector<double> &x, std::vector<double> &y, int &ndata, std::vector<double> &sig, int &mwt, double *a, double *b, double *siga, double *sigb, double *sigab, double *chi2, double *q); 
 
 	// Function for expanding the storage of an array
 	void covsrt(std::vector< std::vector< double > > &covar, int &ma, std::vector<int> &ia, int &mfit); 

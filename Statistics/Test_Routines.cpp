@@ -908,15 +908,16 @@ void testing::lin_fit_test()
 	double SPREAD = 1.0; 
 	int i, mwt = 0; 
 	long idum = (-117); 
-	double a, b, chi2, q, siga, sigb; 
+	double a, b, chi2, q, siga, sigb, sigab, xbar, ybar, ymod, deltay, m, c; 
 	std::vector<double> x(NPT, 0.0); 
 	std::vector<double> y(NPT, 0.0);
 	std::vector<double> sig(NPT, 0.0);
 
 	// fill the vectors with data
+	m = -2.0; c = 1.0; 
 	for (i = 0; i < NPT; i++) {
 		x[i] = 0.1*(i + 1); 
-		y[i] = -2.0*x[i] + 1.0 + SPREAD*rng::gasdev(&idum); 
+		y[i] = m * x[i] + c + SPREAD*rng::gasdev(&idum); // y = m x + c +epsilon
 		sig[i] = SPREAD; 
 	}
 
@@ -924,7 +925,7 @@ void testing::lin_fit_test()
 	std::cout << std::fixed << std::setprecision(6); 
 	for (i = 0; i < 2; i++) {
 		// compute the linear fit parameters
-		fit::lin_fit(x, y, NPT, sig, mwt, &a, &b, &siga, &sigb, &chi2, &q); 
+		fit::lin_fit(x, y, NPT, sig, mwt, &a, &b, &siga, &sigb, &sigab, &chi2, &q); 
 
 		if (mwt)
 			std::cout << "\nIncluding standard deviations\n"; 
@@ -934,10 +935,18 @@ void testing::lin_fit_test()
 		std::cout << std::setw(19) << "uncertainty: " << std::setw(10) << siga << "\n";
 		std::cout << std::setw(12) << "b = " << std::setw(10) << b;
 		std::cout << std::setw(19) << "uncertainty: " << std::setw(10) << sigb << "\n";
+		std::cout << std::setw(19) << "covariance = " << std::setw(15) << sigab << "\n";
 		std::cout << std::setw(19) << "chi-squared = " << std::setw(15) << chi2 << "\n";
 		std::cout << std::setw(19) << "nu = " << std::setw(15) << NPT - 2 << "\n";
 		std::cout << std::setw(19) << "chi-squared / nu = " << std::setw(15) << chi2 / (NPT - 2) << "\n";
-		std::cout << std::setw(23) << "goodness-of-fit = " << std::setw(11) << q << "\n";
+		std::cout << std::setw(23) << "goodness-of-fit = " << std::setw(11) << q << "\n\n";
+		// Compute an estimate for y using the computed model
+		// Compare it with the known value, what is the uncertainty in y
+		xbar = 0.63; ybar = m * xbar + c; ymod = b * xbar + a; 
+		deltay = sqrt( template_funcs::DSQR(siga) + template_funcs::DSQR( sigb * xbar ) + 2.0 * xbar * template_funcs::DSQR(sigab) );
+		std::cout << "\n";
+		std::cout << "x = "<<xbar<<"\n";
+		std::cout << "y_exact = " << ybar << " , y_model = " << ymod << " +/- "<< 0.5*deltay << "\n";
 		mwt++; 
 	}
 	std::cout << "\n"; 

@@ -2,7 +2,7 @@
 #include "Attach.h"
 #endif
 
-void fit::lin_fit(std::vector<double> &x, std::vector<double> &y, int &ndata, std::vector<double> &sig, int &mwt, double *a, double *b, double *siga, double *sigb, double *chi2, double *q)
+void fit::lin_fit(std::vector<double> &x, std::vector<double> &y, int &ndata, std::vector<double> &sig, int &mwt, double *a, double *b, double *siga, double *sigb, double *sigab, double *chi2, double *q)
 {
 	// Given a set of data points x[1..ndata], y[1..ndata] with individual standard deviations  sig[1..ndata], 
 	// fit them to a straight line y = a + bx by minimizing \chi^{2}. Returned are a, b and their respective
@@ -23,7 +23,7 @@ void fit::lin_fit(std::vector<double> &x, std::vector<double> &y, int &ndata, st
 		if (c7) {
 			int i;
 			double wt, t, sxoss, sx = 0.0, sy = 0.0, st2 = 0.0, ss, sigdat;
-
+			// Sums have been re-written to avoid roundoff errors
 			*b = 0.0;
 			if (mwt) { // compute sums with weights
 				ss = 0.0;
@@ -59,11 +59,13 @@ void fit::lin_fit(std::vector<double> &x, std::vector<double> &y, int &ndata, st
 				}
 			}
 
-			// Solve for a, b, sig_{a}, sig_{b}
+			// Solve for a, b, sig_{a}, sig_{b}, sig_{ab}
+			// Sums have been re-written to avoid roundoff errors
 			*b /= st2;
 			*a = (sy - sx * (*b)) / ss;
 			*siga = sqrt((1.0 + sx * sx / (ss*st2)) / ss);
 			*sigb = sqrt(1.0 / st2);
+			*sigab = sqrt( sx / (ss * st2) ); 
 
 			// Compute \chi^{2}
 			*chi2 = 0.0;
