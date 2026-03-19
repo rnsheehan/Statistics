@@ -905,7 +905,7 @@ void testing::lin_fit_test()
 	// R. Sheehan 22 - 6 - 2018
 
 	int NPT = 100; 
-	double SPREAD = 1.0; 
+	double SPREAD = 1.5; 
 	int i, mwt = 0; 
 	long idum = (-117); 
 	double a, b, chi2, q, siga, sigb, sigab, xbar, ybar, ymod, deltay, m, c; 
@@ -946,7 +946,7 @@ void testing::lin_fit_test()
 		deltay = sqrt( template_funcs::DSQR(siga) + template_funcs::DSQR( sigb * xbar ) + 2.0 * xbar * template_funcs::DSQR(sigab) );
 		std::cout << "\n";
 		std::cout << "x = "<<xbar<<"\n";
-		std::cout << "y_exact = " << ybar << " , y_model = " << ymod << " +/- "<< 0.5*deltay << "\n";
+		std::cout << "y_exact = " << ybar << " , y_model = " << ymod << " +/- "<< deltay << "\n";
 		mwt++; 
 	}
 	std::cout << "\n"; 
