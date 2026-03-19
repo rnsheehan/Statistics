@@ -914,7 +914,8 @@ void testing::lin_fit_test()
 	std::vector<double> sig(NPT, 0.0);
 
 	// fill the vectors with data
-	m = -2.0; c = 1.0; 
+	//m = -2.0; c = 1.0; 
+	m = 1.76; c = -0.75; 
 	for (i = 0; i < NPT; i++) {
 		x[i] = 0.1*(i + 1); 
 		y[i] = m * x[i] + c + SPREAD*rng::gasdev(&idum); // y = m x + c +epsilon

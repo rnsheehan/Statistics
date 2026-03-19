@@ -77,6 +77,7 @@ void fit::lin_fit(std::vector<double> &x, std::vector<double> &y, int &ndata, st
 				sigdat = sqrt((*chi2) / (ndata - 2));
 				*siga *= sigdat;
 				*sigb *= sigdat;
+				*sigab *= sigdat;
 			}
 			else {
 				for (i = 0; i < ndata; i++) {
